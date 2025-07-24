@@ -1,191 +1,177 @@
 /* --- ESTILOS GERAIS --- */
 body {
-  margin: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  background-color: #1a1a1a;
-  font-family: "Press Start 2P", cursive;
-  overflow: hidden;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #1a1a1a;
+    font-family: 'Press Start 2P', cursive;
+    overflow: hidden;
 }
 
 /* --- TELA DO JOGO E CENÁRIO --- */
 #game-container {
-  width: 90vw;
-  max-width: 800px;
-  height: 60vh;
-  max-height: 450px;
-  border: 5px solid #444;
-  border-radius: 5px;
-  background-color: #87ceeb; /* Azul do céu */
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    width: 90vw;
+    max-width: 800px;
+    height: 60vh;
+    max-height: 450px;
+    border: 5px solid #444;
+    border-radius: 5px;
+    background-color: #87ceeb; /* Azul do céu */
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 #game-container:focus {
-  outline: none;
+    outline: none;
 }
-#sky,
-#far-clouds,
-#near-clouds,
-#ground {
-  position: absolute;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-repeat: repeat-x;
+#sky, #far-clouds, #near-clouds, #ground {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-repeat: repeat-x;
 }
 #far-clouds {
-  background-image: url("imagens/clouds.png");
-  animation: scroll 60s linear infinite;
-  opacity: 0.6;
+    background-image: url('imagens/clouds.png');
+    animation: scroll 60s linear infinite;
+    opacity: 0.6;
+    width: 101%; /* AJUSTE 1: Corrige linha vertical */
 }
 #near-clouds {
-  background-image: url("imagens/clouds.png");
-  animation: scroll 30s linear infinite reverse; /* Movendo em outra direção/velocidade */
+    background-image: url('imagens/clouds.png');
+    animation: scroll 30s linear infinite reverse;
+    width: 101%; /* AJUSTE 1: Corrige linha vertical */
 }
 #ground {
-  height: 24px;
-  bottom: 0;
-  z-index: 5;
-  background-image: url("imagens/ground.png");
-  animation: scroll 8s linear infinite;
+    height: 24px;
+    bottom: 0;
+    z-index: 5;
+    background-image: url('imagens/ground.png');
+    animation: scroll 8s linear infinite;
 }
 @keyframes scroll {
-  from {
-    background-position-x: 0;
-  }
-  to {
-    background-position-x: -1024px;
-  }
+    from { background-position-x: 0; }
+    to { background-position-x: -1024px; }
 }
 
 /* --- PERSONAGEM E ITENS --- */
 #hedgehog {
-  position: absolute;
-  bottom: 24px; /* Começa em cima do chão */
-  left: 60px;
-  width: 44px;
-  height: 47px;
-  z-index: 10;
-  background-image: url("imagens/hedgehog-sprite.png");
-  background-size: auto 100%;
+    position: absolute;
+    bottom: 24px;
+    left: 60px;
+    width: 55px;   /* AJUSTE 2: Tamanho aumentado */
+    height: 59px;  /* AJUSTE 2: Tamanho aumentado */
+    z-index: 10;
+    background-image: url('imagens/hedgehog-sprite.png');
+    background-size: auto 100%;
+    /* AJUSTE 3: Força a transparência */
+    mask-image: url('imagens/hedgehog-sprite.png');
+    mask-size: auto 100%;
 }
-.run-frame-1 {
-  background-position: 0 0;
-}
-.run-frame-2 {
-  background-position: -44px 0;
-}
-.jump-frame {
-  background-position: -88px 0;
-}
-.crashed {
-  animation: blink 0.5s 3;
-}
+/* AJUSTE 2: Novos valores para a animação */
+.run-frame-1 { background-position: 0 0; }
+.run-frame-2 { background-position: -55px 0; }
+.jump-frame  { background-position: -110px 0; }
+.crashed { animation: blink 0.5s 3; }
 
 .item {
-  position: absolute;
-  z-index: 9;
-  bottom: 29px; /* Posição inicial no chão */
-  background-size: contain;
-  background-repeat: no-repeat;
+    position: absolute;
+    z-index: 9;
+    bottom: 29px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    /* AJUSTE 3: Força a transparência nos itens */
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
 }
-.tool {
-  width: 35px;
-  height: 35px;
-  background-image: url("imagens/item-ferramenta.png");
+.tool { 
+    width: 44px;   /* AJUSTE 2: Tamanho aumentado */
+    height: 44px;  /* AJUSTE 2: Tamanho aumentado */
+    background-image: url('imagens/item-ferramenta.png'); 
+    mask-image: url('imagens/item-ferramenta.png'); /* AJUSTE 3 */
 }
-.code {
-  width: 40px;
-  height: 30px;
-  bottom: 60px;
-  background-image: url("imagens/item-codigo.png");
+.code { 
+    width: 50px;   /* AJUSTE 2: Tamanho aumentado */
+    height: 38px;  /* AJUSTE 2: Tamanho aumentado */
+    bottom: 60px; 
+    background-image: url('imagens/item-codigo.png');
+    mask-image: url('imagens/item-codigo.png'); /* AJUSTE 3 */
 }
-.bug {
-  width: 45px;
-  height: 30px;
-  background-image: url("imagens/obstaculo-bug.png");
+.bug { 
+    width: 56px;   /* AJUSTE 2: Tamanho aumentado */
+    height: 38px;  /* AJUSTE 2: Tamanho aumentado */
+    background-image: url('imagens/obstaculo-bug.png');
+    mask-image: url('imagens/obstaculo-bug.png'); /* AJUSTE 3 */
 }
 
 .particle {
-  position: absolute;
-  width: 5px;
-  height: 5px;
-  background-color: #f39c12;
-  border-radius: 50%;
-  animation: fade-out-up 0.5s ease-out forwards;
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    background-color: #f39c12;
+    border-radius: 50%;
+    animation: fade-out-up 0.5s ease-out forwards;
 }
 @keyframes fade-out-up {
-  to {
-    transform: translateY(-50px);
-    opacity: 0;
-  }
+    to { transform: translateY(-50px); opacity: 0; }
 }
 @keyframes blink {
-  50% {
-    opacity: 0.2;
-  }
+    50% { opacity: 0.2; }
 }
 
 /* --- INTERFACE E BOTÕES --- */
 #ui-container {
-  position: absolute;
-  width: 100%;
-  padding: 15px;
-  box-sizing: border-box;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  color: white;
-  text-shadow: 2px 2px #333;
-  font-size: 0.8em;
-  z-index: 20;
+    position: absolute;
+    width: 100%;
+    padding: 15px;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    color: white;
+    text-shadow: 2px 2px #333;
+    font-size: 0.8em;
+    z-index: 20;
 }
-#score-display,
-#highscore-display {
-  background: rgba(0, 0, 0, 0.3);
-  padding: 5px 10px;
-  border-radius: 5px;
+#score-display, #highscore-display {
+    background: rgba(0,0,0,0.3);
+    padding: 5px 10px;
+    border-radius: 5px;
 }
 #progress-container {
-  width: 150px;
-  height: 15px;
-  background-color: rgba(0, 0, 0, 0.3);
-  border: 2px solid #333;
+    width: 150px;
+    height: 15px;
+    background-color: rgba(0,0,0,0.3);
+    border: 2px solid #333;
 }
 #progress-bar {
-  width: 0%;
-  height: 100%;
-  background-color: #f39c12;
-  transition: width 0.5s ease-out;
+    width: 0%;
+    height: 100%;
+    background-color: #f39c12;
+    transition: width 0.5s ease-out;
 }
 
 #message-display {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: white;
-  text-shadow: 2px 2px #333;
-  text-align: center;
-  font-size: 1.5em;
-  z-index: 100;
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    color: white; text-shadow: 2px 2px #333;
+    text-align: center; font-size: 1.5em; z-index: 100;
 }
 #message-display span {
-  font-size: 0.6em;
-  display: block;
-  margin-top: 15px;
+    font-size: 0.6em; display: block; margin-top: 15px;
 }
 
 #mute-button {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  font-size: 2em;
-  background: none;
-  border: none;
-  cursor: pointer;
-  z-index: 101;
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 2em;
+    background: none;
+    border: none;
+    cursor: pointer;
+    z-index: 101;
 }
