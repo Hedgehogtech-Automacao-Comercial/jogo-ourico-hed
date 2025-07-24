@@ -4,11 +4,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const hedgehog = document.getElementById('hedgehog');
     const messageDisplay = document.getElementById('message-display');
     const boostBar = document.getElementById('boost-bar');
-    const boostBarContainer = document.getElementById('boost-container');
+    const boostBarContainer = document.getElementById('boost-container'); // CORRIGIDO para ser consistente
     const scoreValue = document.getElementById('score-value');
     const highscoreValue = document.getElementById('highscore-value');
     const muteButton = document.getElementById('mute-button');
-    const attackButton = document.getElementById('attack-button'); // Botão de ataque
+    const attackButton = document.getElementById('attack-button');
     const sounds = {
         music: document.getElementById('music-bg'),
         jump: document.getElementById('sound-jump'),
@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let frameCounter = 0;
     let spawnTimer = 0;
     let gameLoopInterval;
-    let spawnInterval = 100; // Sistema de spawn simplificado
+    let spawnInterval = 100;
     
     let boostValue = 0;
     const boostMax = 100;
@@ -73,7 +73,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Loop Principal do Jogo ---
     function gameLoop() {
         if (!isGameRunning) return;
-
         gameSpeed += 0.003;
         frameCounter++;
         if (!isJumping && !isAttacking && frameCounter % 10 === 0) {
@@ -83,13 +82,12 @@ document.addEventListener('DOMContentLoaded', () => {
         handleJump();
         handleItems();
         
-        // Lógica de spawn simplificada e corrigida
         spawnTimer++;
         if (spawnTimer >= spawnInterval) {
             spawnItem();
             spawnTimer = 0;
             if (spawnInterval > 40) {
-                spawnInterval *= 0.99; // Acelera o surgimento de itens com o tempo
+                spawnInterval *= 0.99;
             }
         }
     }
@@ -164,33 +162,29 @@ document.addEventListener('DOMContentLoaded', () => {
         boostBar.style.backgroundSize = `${boostPercentage}% 100%`;
         if (boostValue >= boostMax) {
             isBoostReady = true;
-            if (boostBarContainer) boostBarContainer.classList.add('ready');
-            if (attackButton) attackButton.classList.add('ready');
+            boostBarContainer.classList.add('ready');
+            attackButton.classList.add('ready');
             playSound('powerup');
         }
     }
     
     function triggerAttack() {
         if (!isBoostReady || isAttacking) return;
-
         isAttacking = true;
         isBoostReady = false;
         boostValue = 0;
         boostBar.style.backgroundSize = '0% 100%';
-        if (boostBarContainer) boostBarContainer.classList.remove('ready');
-        if (attackButton) attackButton.classList.remove('ready');
-        
+        boostBarContainer.classList.remove('ready');
+        attackButton.classList.remove('ready');
         hedgehog.classList.remove('run-frame-1', 'run-frame-2', 'jump-frame');
         hedgehog.classList.add('attack-pose');
         playSound('explosion');
-
         setTimeout(() => {
             isAttacking = false;
             hedgehog.classList.remove('attack-pose');
         }, 500);
     }
 
-    // --- Controle do Jogo (Início, Fim, Comandos) ---
     function handleJumpPress() {
         if (!isGameRunning) {
             startGame();
@@ -205,43 +199,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function handleJumpRelease() {
-        isJumpKeyDown = false;
-    }
-
-    // Controles do Teclado
+    function handleJumpRelease() { isJumpKeyDown = false; }
+    
     function handleKeyDown(e) {
-        if (e.code === 'Space') {
-            e.preventDefault();
-            handleJumpPress();
-        }
-        if (e.code === 'KeyS') {
-            if (isGameRunning) triggerAttack();
-        }
+        if (e.code === 'Space') { e.preventDefault(); handleJumpPress(); }
+        if (e.code === 'KeyS') { if (isGameRunning) triggerAttack(); }
     }
+    function handleKeyUp(e) { if (e.code === 'Space') { handleJumpRelease(); } }
     
-    function handleKeyUp(e) {
-        if (e.code === 'Space') {
-            handleJumpRelease();
-        }
-    }
-    
-    // Controles de Toque
     attackButton.addEventListener('touchstart', (e) => {
         e.preventDefault();
-        e.stopPropagation(); // Impede que o toque "vaze" para o container do jogo
+        e.stopPropagation();
         triggerAttack();
     });
-
-    gameContainer.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        handleJumpPress();
-    });
-
-    gameContainer.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        handleJumpRelease();
-    });
+    gameContainer.addEventListener('touchstart', (e) => { e.preventDefault(); handleJumpPress(); });
+    gameContainer.addEventListener('touchend', (e) => { e.preventDefault(); handleJumpRelease(); });
 
     function startGame() {
         isGameRunning = true;
@@ -251,14 +223,14 @@ document.addEventListener('DOMContentLoaded', () => {
         isBoostReady = false;
         isAttacking = false;
         spawnTimer = 0;
-        spawnInterval = 100; // Reseta o intervalo de spawn
+        spawnInterval = 100;
         hedgehog.classList.remove('crashed', 'attack-pose');
         document.querySelectorAll('.item').forEach(item => item.remove());
         messageDisplay.style.display = 'none';
         updateScore(0);
         updateBoost(0);
-        if (boostBarContainer) boostBarContainer.classList.remove('ready');
-        if (attackButton) attackButton.classList.remove('ready');
+        boostBarContainer.classList.remove('ready');
+        attackButton.classList.remove('ready');
         if (!isMuted) {
              sounds.music.currentTime = 0;
              sounds.music.play();
@@ -277,7 +249,6 @@ document.addEventListener('DOMContentLoaded', () => {
         playSound('gameover');
     }
 
-    // --- Inicialização ---
     loadHighScore();
     gameContainer.addEventListener('keydown', handleKeyDown);
     gameContainer.addEventListener('keyup', handleKeyUp);
