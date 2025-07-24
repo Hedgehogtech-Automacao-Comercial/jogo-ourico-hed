@@ -3,8 +3,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const gameContainer = document.getElementById('game-container');
     const hedgehog = document.getElementById('hedgehog');
     const messageDisplay = document.getElementById('message-display');
-    const boostBarContainer = document.getElementById('boost-container'); // Atualizado
-    const boostBar = document.getElementById('boost-bar'); // Atualizado
+    const boostBar = document.getElementById('boost-bar');
+    const boostBarWrapper = document.getElementById('boost-bar-wrapper');
     const scoreValue = document.getElementById('score-value');
     const highscoreValue = document.getElementById('highscore-value');
     const muteButton = document.getElementById('mute-button');
@@ -13,7 +13,8 @@ document.addEventListener('DOMContentLoaded', () => {
         jump: document.getElementById('sound-jump'),
         collect: document.getElementById('sound-collect'),
         gameover: document.getElementById('sound-gameover'),
-        attack: document.getElementById('sound-attack') // Novo som
+        explosion: document.getElementById('sound-explosion'),
+        powerup: document.getElementById('sound-powerup')
     };
 
     // --- Configurações e Estado do Jogo ---
@@ -28,14 +29,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let spawnTimer = 0;
     let gameLoopInterval;
     
-    // Novas variáveis de estado para as novas mecânicas
     let boostValue = 0;
     const boostMax = 100;
     let isBoostReady = false;
     let isAttacking = false;
     let isJumpKeyDown = false;
     let jumpTimeCounter = 0;
-    const maxJumpTime = 15; // Aumenta um pouco para um pulo mais alto
+    const maxJumpTime = 15;
 
     // --- Funções de Áudio ---
     function playSound(sound) {
@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
     muteButton.addEventListener('click', () => {
         isMuted = !isMuted;
         muteButton.textContent = isMuted ? '🔇' : '🔊';
-        sounds.music.muted = isMuted; // Melhor forma de mutar
+        sounds.music.muted = isMuted;
         if (!isMuted && isGameRunning) {
             sounds.music.play();
         } else {
@@ -70,7 +70,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Loop Principal do Jogo ---
     function gameLoop() {
-        gameSpeed += 0.003; // Dificuldade progressiva e infinita
+        if (!isGameRunning) return;
+        gameSpeed += 0.003;
         frameCounter++;
         if (!isJumping && !isAttacking && frameCounter % 10 === 0) {
             hedgehog.classList.toggle('run-frame-1');
@@ -85,11 +86,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- Lógicas de Gameplay ATUALIZADAS ---
+    // --- Lógicas de Gameplay ---
     function handleJump() {
         if (isJumping) {
             if (isJumpKeyDown && jumpTimeCounter < maxJumpTime) {
-                verticalVelocity += 0.35; // Força extra para cima enquanto segura
+                verticalVelocity += 0.35;
                 jumpTimeCounter++;
             }
             hedgehogBottom += verticalVelocity;
@@ -117,20 +118,17 @@ document.addEventListener('DOMContentLoaded', () => {
             let itemLeft = item.offsetLeft;
             itemLeft -= gameSpeed;
             item.style.left = itemLeft + "px";
-
             if (itemLeft < -50) {
                 item.remove();
                 return;
             }
-            
             const hedgehogRect = hedgehog.getBoundingClientRect();
             const itemRect = item.getBoundingClientRect();
-
             if (hedgehogRect.left < itemRect.right && hedgehogRect.right > itemRect.left && hedgehogRect.top < itemRect.bottom && hedgehogRect.bottom > itemRect.top) {
                 if (item.classList.contains('bug')) {
                     if (isAttacking) {
                         createExplosion(itemRect.left, itemRect.top);
-                        playSound('attack');
+                        playSound('explosion');
                         updateScore(20);
                         item.remove();
                     } else {
@@ -159,36 +157,33 @@ document.addEventListener('DOMContentLoaded', () => {
         boostBar.style.backgroundSize = `${boostPercentage}% 100%`;
         if (boostValue >= boostMax) {
             isBoostReady = true;
-            boostBar.classList.add('ready');
+            boostBarWrapper.classList.add('ready');
+            playSound('powerup');
         }
     }
     
     function triggerAttack() {
         if (!isBoostReady || isAttacking || isJumping) return;
-
         isAttacking = true;
         isBoostReady = false;
         boostValue = 0;
         boostBar.style.backgroundSize = '0% 100%';
-        boostBar.classList.remove('ready');
-
+        boostBarWrapper.classList.remove('ready');
         hedgehog.classList.add('attack-pose');
         hedgehog.classList.remove('run-frame-1', 'run-frame-2');
-        playSound('attack');
-
+        playSound('explosion'); // Som de ataque/explosão
         setTimeout(() => {
             isAttacking = false;
             hedgehog.classList.remove('attack-pose');
         }, 500);
     }
 
-    // --- Controle do Jogo (Início, Fim, Comandos) ATUALIZADO ---
+    // --- Controle do Jogo (Início, Fim, Comandos) ---
     function control(e) {
         if (e.code === 'Space') {
             e.preventDefault();
-            if (!isGameRunning) {
-                startGame();
-            } else if (!isJumping) {
+            if (!isGameRunning) startGame();
+            else if (!isJumping) {
                 isJumping = true;
                 isJumpKeyDown = true;
                 jumpTimeCounter = 0;
@@ -221,12 +216,10 @@ document.addEventListener('DOMContentLoaded', () => {
         messageDisplay.style.display = 'none';
         updateScore(0);
         updateBoost(0);
-        
         if (!isMuted) {
              sounds.music.currentTime = 0;
              sounds.music.play();
         }
-        
         gameLoopInterval = setInterval(gameLoop, 20);
     }
 
@@ -244,6 +237,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Inicialização ---
     loadHighScore();
     gameContainer.addEventListener('keydown', control);
-    gameContainer.addEventListener('keyup', releaseControl); // Listener para soltar a tecla
+    gameContainer.addEventListener('keyup', releaseControl);
     gameContainer.focus();
 });
