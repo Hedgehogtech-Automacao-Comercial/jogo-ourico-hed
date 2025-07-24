@@ -75,13 +75,12 @@ body {
 .jump-frame  { background-position: -110px 0; }
 .crashed { animation: blink 0.5s 3; }
 
-/* NOVO: Estilo para a pose de ataque */
 #hedgehog.attack-pose {
     background-image: url('imagens/hedgehog-attack.png');
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
-    mask-image: url('imagens/hedgehog-attack.png'); /* Máscara para o ataque também */
+    mask-image: url('imagens/hedgehog-attack.png');
 }
 
 .item {
@@ -130,19 +129,17 @@ body {
     50% { opacity: 0.2; }
 }
 
-/* NOVO: Estilo para a animação de explosão */
 .explosion {
     position: absolute;
-    width: 64px; /* Tamanho de um frame da sua explosão */
+    width: 64px;
     height: 64px;
     background-image: url('imagens/explosion-sprite.png');
     z-index: 50;
-    /* Animação que percorre 5 frames da sprite sheet */
     animation: play-explosion 0.5s steps(5) forwards;
 }
 @keyframes play-explosion {
     from { background-position: 0 0; }
-    to { background-position: -320px 0; } /* 64px * 5 frames */
+    to { background-position: -320px 0; }
 }
 
 /* --- INTERFACE E BOTÕES --- */
@@ -165,26 +162,28 @@ body {
     border-radius: 5px;
 }
 
-/* MUDANÇA: Estilos para a nova Barra de Boost */
 #boost-container {
     font-size: 0.8em;
     color: white;
     text-shadow: 2px 2px #333;
     text-align: right;
 }
-#boost-bar {
+#boost-bar-wrapper { /* Renomeado para wrapper */
     width: 150px;
     height: 15px;
     background-color: rgba(0,0,0,0.3);
     border: 2px solid #333;
     margin-top: 5px;
-    /* Barra interna que preenche */
+}
+#boost-bar {
+    width: 100%; /* A barra em si sempre tem 100% de largura */
+    height: 100%;
     background-image: linear-gradient(to right, #00ffff, #00b8b8);
-    background-size: 0% 100%;
+    background-size: 0% 100%; /* A mágica acontece aqui */
     background-repeat: no-repeat;
     transition: background-size 0.2s linear;
 }
-#boost-bar.ready {
+#boost-bar-wrapper.ready { /* A animação vai no wrapper */
     animation: glow 1s infinite alternate;
 }
 @keyframes glow {
