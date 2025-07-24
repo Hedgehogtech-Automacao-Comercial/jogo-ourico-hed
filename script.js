@@ -3,7 +3,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const gameContainer = document.getElementById('game-container');
     const hedgehog = document.getElementById('hedgehog');
     const messageDisplay = document.getElementById('message-display');
-    const progressBar = document.getElementById('progress-bar');
+    const boostBarContainer = document.getElementById('boost-container'); // Atualizado
+    const boostBar = document.getElementById('boost-bar'); // Atualizado
     const scoreValue = document.getElementById('score-value');
     const highscoreValue = document.getElementById('highscore-value');
     const muteButton = document.getElementById('mute-button');
@@ -12,55 +13,66 @@ document.addEventListener('DOMContentLoaded', () => {
         jump: document.getElementById('sound-jump'),
         collect: document.getElementById('sound-collect'),
         gameover: document.getElementById('sound-gameover'),
+        attack: document.getElementById('sound-attack') // Novo som
     };
 
     // --- Configurações e Estado do Jogo ---
     let isGameRunning = false, isJumping = false, isMuted = true;
     let score = 0, highScore = 0;
-    const goalScore = 200; // Pontuação para "vencer"
-    let hedgehogBottom = 24; // Posição inicial no chão
+    let hedgehogBottom = 24;
     let verticalVelocity = 0;
     const gravity = 0.9;
-    const jumpStrength = 20;
+    const initialJumpStrength = 18;
     let gameSpeed = 5;
     let frameCounter = 0;
     let spawnTimer = 0;
     let gameLoopInterval;
+    
+    // Novas variáveis de estado para as novas mecânicas
+    let boostValue = 0;
+    const boostMax = 100;
+    let isBoostReady = false;
+    let isAttacking = false;
+    let isJumpKeyDown = false;
+    let jumpTimeCounter = 0;
+    const maxJumpTime = 15; // Aumenta um pouco para um pulo mais alto
 
     // --- Funções de Áudio ---
     function playSound(sound) {
         if (!isMuted && sounds[sound]) {
             sounds[sound].currentTime = 0;
-            sounds[sound].play();
+            sounds[sound].play().catch(e => console.error("Erro ao tocar som:", e));
         }
     }
     muteButton.addEventListener('click', () => {
         isMuted = !isMuted;
         muteButton.textContent = isMuted ? '🔇' : '🔊';
-        if (isMuted) {
-            sounds.music.pause();
-        } else if (isGameRunning) {
+        sounds.music.muted = isMuted; // Melhor forma de mutar
+        if (!isMuted && isGameRunning) {
             sounds.music.play();
+        } else {
+            sounds.music.pause();
         }
     });
 
     // --- Funções de Pontuação ---
     function loadHighScore() {
-        highScore = localStorage.getItem('hedgehogHighScore') || 0;
+        highScore = localStorage.getItem('hedgehogHighScoreV2') || 0;
         highscoreValue.textContent = highScore;
     }
     function saveHighScore() {
         if (score > highScore) {
             highScore = score;
-            localStorage.setItem('hedgehogHighScore', highScore);
+            localStorage.setItem('hedgehogHighScoreV2', highScore);
             highscoreValue.textContent = highScore;
         }
     }
 
     // --- Loop Principal do Jogo ---
     function gameLoop() {
+        gameSpeed += 0.003; // Dificuldade progressiva e infinita
         frameCounter++;
-        if (!isJumping && frameCounter % 10 === 0) {
+        if (!isJumping && !isAttacking && frameCounter % 10 === 0) {
             hedgehog.classList.toggle('run-frame-1');
             hedgehog.classList.toggle('run-frame-2');
         }
@@ -73,40 +85,31 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- Lógicas de Gameplay ---
+    // --- Lógicas de Gameplay ATUALIZADAS ---
     function handleJump() {
-        if (!isJumping) return;
-        hedgehogBottom += verticalVelocity;
-        verticalVelocity -= gravity;
-        if (hedgehogBottom <= 24) {
-            hedgehogBottom = 24;
-            isJumping = false;
-            hedgehog.classList.remove('jump-frame');
-        }
-        hedgehog.style.bottom = hedgehogBottom + 'px';
-    }
-
-    function createParticle(x, y) {
-        for (let i = 0; i < 5; i++) {
-            const particle = document.createElement('div');
-            particle.className = 'particle';
-            particle.style.left = `${x + (Math.random() - 0.5) * 20}px`;
-            particle.style.top = `${y + (Math.random() - 0.5) * 20}px`;
-            gameContainer.appendChild(particle);
-            setTimeout(() => particle.remove(), 500);
+        if (isJumping) {
+            if (isJumpKeyDown && jumpTimeCounter < maxJumpTime) {
+                verticalVelocity += 0.35; // Força extra para cima enquanto segura
+                jumpTimeCounter++;
+            }
+            hedgehogBottom += verticalVelocity;
+            verticalVelocity -= gravity;
+            if (hedgehogBottom <= 24) {
+                hedgehogBottom = 24;
+                isJumping = false;
+                hedgehog.classList.remove('jump-frame');
+            }
+            hedgehog.style.bottom = hedgehogBottom + 'px';
         }
     }
 
-    function spawnItem() {
-        const itemDiv = document.createElement("div");
-        itemDiv.className = 'item';
-        const random = Math.random();
-        if (random < 0.5) itemDiv.classList.add("tool");
-        else if (random < 0.8) itemDiv.classList.add("code");
-        else itemDiv.classList.add("bug");
-        
-        itemDiv.style.left = gameContainer.offsetWidth + "px";
-        gameContainer.appendChild(itemDiv);
+    function createExplosion(x, y) {
+        const explosion = document.createElement('div');
+        explosion.className = 'explosion';
+        explosion.style.left = `${x - 32}px`;
+        explosion.style.top = `${y - 32}px`;
+        gameContainer.appendChild(explosion);
+        setTimeout(() => explosion.remove(), 500);
     }
 
     function handleItems() {
@@ -115,16 +118,27 @@ document.addEventListener('DOMContentLoaded', () => {
             itemLeft -= gameSpeed;
             item.style.left = itemLeft + "px";
 
-            if (itemLeft < -50) item.remove();
-
+            if (itemLeft < -50) {
+                item.remove();
+                return;
+            }
+            
             const hedgehogRect = hedgehog.getBoundingClientRect();
             const itemRect = item.getBoundingClientRect();
 
             if (hedgehogRect.left < itemRect.right && hedgehogRect.right > itemRect.left && hedgehogRect.top < itemRect.bottom && hedgehogRect.bottom > itemRect.top) {
                 if (item.classList.contains('bug')) {
-                    endGame("Ops, um bug!");
+                    if (isAttacking) {
+                        createExplosion(itemRect.left, itemRect.top);
+                        playSound('attack');
+                        updateScore(20);
+                        item.remove();
+                    } else {
+                        endGame("Ops, um bug!");
+                    }
                 } else {
                     updateScore(10);
+                    updateBoost(10);
                     createParticle(itemRect.left, itemRect.top);
                     playSound('collect');
                     item.remove();
@@ -136,25 +150,62 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateScore(points) {
         score += points;
         scoreValue.textContent = score;
-        const progress = Math.min(score / goalScore * 100, 100);
-        progressBar.style.width = progress + "%";
-        if (score >= goalScore) {
-            endGame("Construção Concluída!");
-        }
     }
 
-    // --- Controle do Jogo (Início, Fim, Comandos) ---
+    function updateBoost(value) {
+        if (isBoostReady) return;
+        boostValue = Math.min(boostValue + value, boostMax);
+        const boostPercentage = (boostValue / boostMax) * 100;
+        boostBar.style.backgroundSize = `${boostPercentage}% 100%`;
+        if (boostValue >= boostMax) {
+            isBoostReady = true;
+            boostBar.classList.add('ready');
+        }
+    }
+    
+    function triggerAttack() {
+        if (!isBoostReady || isAttacking || isJumping) return;
+
+        isAttacking = true;
+        isBoostReady = false;
+        boostValue = 0;
+        boostBar.style.backgroundSize = '0% 100%';
+        boostBar.classList.remove('ready');
+
+        hedgehog.classList.add('attack-pose');
+        hedgehog.classList.remove('run-frame-1', 'run-frame-2');
+        playSound('attack');
+
+        setTimeout(() => {
+            isAttacking = false;
+            hedgehog.classList.remove('attack-pose');
+        }, 500);
+    }
+
+    // --- Controle do Jogo (Início, Fim, Comandos) ATUALIZADO ---
     function control(e) {
-        if (e.code === 'Space' || e.type === 'touchstart') {
+        if (e.code === 'Space') {
             e.preventDefault();
-            if (!isGameRunning) startGame();
-            else if (!isJumping) {
+            if (!isGameRunning) {
+                startGame();
+            } else if (!isJumping) {
                 isJumping = true;
-                verticalVelocity = jumpStrength;
+                isJumpKeyDown = true;
+                jumpTimeCounter = 0;
+                verticalVelocity = initialJumpStrength;
                 hedgehog.classList.add('jump-frame');
                 hedgehog.classList.remove('run-frame-1', 'run-frame-2');
                 playSound('jump');
             }
+        }
+        if (e.code === 'KeyS') {
+            if (isGameRunning) triggerAttack();
+        }
+    }
+    
+    function releaseControl(e) {
+        if (e.code === 'Space') {
+            isJumpKeyDown = false;
         }
     }
 
@@ -162,11 +213,20 @@ document.addEventListener('DOMContentLoaded', () => {
         isGameRunning = true;
         score = 0;
         gameSpeed = 5;
+        boostValue = 0;
+        isBoostReady = false;
+        isAttacking = false;
         hedgehog.classList.remove('crashed');
         document.querySelectorAll('.item').forEach(item => item.remove());
         messageDisplay.style.display = 'none';
         updateScore(0);
-        if (!isMuted) sounds.music.play();
+        updateBoost(0);
+        
+        if (!isMuted) {
+             sounds.music.currentTime = 0;
+             sounds.music.play();
+        }
+        
         gameLoopInterval = setInterval(gameLoop, 20);
     }
 
@@ -178,13 +238,12 @@ document.addEventListener('DOMContentLoaded', () => {
         messageDisplay.innerHTML = `${message} <span>Pressione ESPAÇO para reiniciar</span>`;
         messageDisplay.style.display = 'block';
         sounds.music.pause();
-        sounds.music.currentTime = 0;
         playSound('gameover');
     }
 
     // --- Inicialização ---
     loadHighScore();
     gameContainer.addEventListener('keydown', control);
-    gameContainer.addEventListener('touchstart', control);
-    gameContainer.focus(); // Foca no jogo ao carregar
+    gameContainer.addEventListener('keyup', releaseControl); // Listener para soltar a tecla
+    gameContainer.focus();
 });
