@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const hedgehog = document.getElementById('hedgehog');
     const messageDisplay = document.getElementById('message-display');
     const boostBar = document.getElementById('boost-bar');
-    const boostBarContainer = document.getElementById('boost-container'); // ID consistente com o HTML
+    const boostBarContainer = document.getElementById('boost-container');
     const scoreValue = document.getElementById('score-value');
     const highscoreValue = document.getElementById('highscore-value');
     const muteButton = document.getElementById('mute-button');
@@ -71,7 +71,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Loop Principal do Jogo ---
     function gameLoop() {
         if (!isGameRunning) return;
-
         gameSpeed += 0.003;
         frameCounter++;
         if (!isJumping && !isAttacking && frameCounter % 10 === 0) {
@@ -83,12 +82,6 @@ document.addEventListener('DOMContentLoaded', () => {
         spawnTimer++;
         
         let spawnThreshold = 90 / (gameSpeed / 5);
-
-        // DIAGNÓSTICO: Imprime o estado do cronômetro no console a cada ~1 segundo.
-        if (spawnTimer % 50 === 0) {
-            console.log(`spawnTimer: ${spawnTimer}, Limite para criar item: ${spawnThreshold.toFixed(2)}`);
-        }
-
         if (spawnTimer > spawnThreshold) {
             spawnItem();
             spawnTimer = 0;
@@ -171,35 +164,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function triggerAttack() {
-        if (!isBoostReady || isAttacking || isJumping) return;
+        if (!isBoostReady || isAttacking) return; // Simplificado
+
         isAttacking = true;
         isBoostReady = false;
         boostValue = 0;
         boostBar.style.backgroundSize = '0% 100%';
         if (boostBarContainer) boostBarContainer.classList.remove('ready');
+        
+        // CORREÇÃO: Garante que todas as outras classes de animação sejam removidas
+        hedgehog.classList.remove('run-frame-1', 'run-frame-2', 'jump-frame');
         hedgehog.classList.add('attack-pose');
-        hedgehog.classList.remove('run-frame-1', 'run-frame-2');
         playSound('explosion');
+
         setTimeout(() => {
             isAttacking = false;
             hedgehog.classList.remove('attack-pose');
         }, 500);
     }
-    
-    function spawnItem() {
-        console.log("%c--- Item Criado! ---", "color: green; font-weight: bold;");
 
-        const itemDiv = document.createElement("div");
-        itemDiv.className = 'item';
-        const random = Math.random();
-        if (random < 0.5) itemDiv.classList.add("tool");
-        else if (random < 0.8) itemDiv.classList.add("code");
-        else itemDiv.classList.add("bug");
-        
-        itemDiv.style.left = gameContainer.offsetWidth + "px";
-        gameContainer.appendChild(itemDiv);
-    }
-
+    // --- Controle do Jogo (Início, Fim, Comandos) ---
     function control(e) {
         if (e.code === 'Space') {
             e.preventDefault();
@@ -210,7 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 jumpTimeCounter = 0;
                 verticalVelocity = initialJumpStrength;
                 hedgehog.classList.add('jump-frame');
-                hedgehog.classList.remove('run-frame-1', 'run-frame-2');
+                hedgehog.classList.remove('run-frame-1', 'run-frame-2', 'attack-pose');
                 playSound('jump');
             }
         }
@@ -226,7 +210,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function startGame() {
-        console.log("Iniciando novo jogo...");
         isGameRunning = true;
         score = 0;
         gameSpeed = 5;
@@ -234,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
         isBoostReady = false;
         isAttacking = false;
         spawnTimer = 0;
-        hedgehog.classList.remove('crashed');
+        hedgehog.classList.remove('crashed', 'attack-pose');
         document.querySelectorAll('.item').forEach(item => item.remove());
         messageDisplay.style.display = 'none';
         updateScore(0);
@@ -248,7 +231,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function endGame(message) {
-        console.log("Fim de jogo. Mensagem: ", message);
         isGameRunning = false;
         clearInterval(gameLoopInterval);
         hedgehog.classList.add('crashed');
@@ -259,6 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
         playSound('gameover');
     }
 
+    // --- Inicialização ---
     loadHighScore();
     gameContainer.addEventListener('keydown', control);
     gameContainer.addEventListener('keyup', releaseControl);
