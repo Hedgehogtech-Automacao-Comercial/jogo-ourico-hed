@@ -162,33 +162,30 @@ body {
     border-radius: 5px;
 }
 
-/* CORREÇÃO: Estilos da Barra de Boost unificados e corrigidos */
 #boost-container {
     font-size: 0.8em;
     color: white;
     text-shadow: 2px 2px #333;
     text-align: right;
-    width: 154px; /* Largura fixa para o container */
+    width: 154px;
 }
 #boost-bar {
     height: 15px;
     background-color: rgba(0,0,0,0.3);
     border: 2px solid #333;
     margin-top: 5px;
-    /* Barra interna que preenche */
     background-image: linear-gradient(to right, #00ffff, #00b8b8);
-    background-size: 0% 100%; /* A mágica acontece aqui */
+    background-size: 0% 100%;
     background-repeat: no-repeat;
     transition: background-size 0.2s linear;
 }
-#boost-container.ready #boost-bar { /* A animação de brilho na barra quando o container tem a classe 'ready' */
+#boost-container.ready #boost-bar {
     animation: glow 1s infinite alternate;
 }
 @keyframes glow {
     from { box-shadow: 0 0 5px #00ffff; }
     to { box-shadow: 0 0 15px #00ffff, 0 0 25px #fff; }
 }
-
 
 #message-display {
     position: absolute; top: 50%; left: 50%;
@@ -209,4 +206,42 @@ body {
     border: none;
     cursor: pointer;
     z-index: 101;
+}
+
+/* NOVO: Estilos para o Botão de Ataque Touch */
+#attack-button {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    width: 60px;
+    height: 60px;
+    background-color: rgba(255, 0, 0, 0.5);
+    border: 3px solid rgba(255, 255, 255, 0.7);
+    border-radius: 50%;
+    z-index: 100;
+    
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 28px;
+    color: white;
+    text-shadow: 2px 2px #000;
+    
+    opacity: 0;
+    transform: scale(0.5);
+    transition: opacity 0.3s, transform 0.3s;
+    pointer-events: none;
+}
+
+#attack-button.ready {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+    animation: glow-attack 1s infinite alternate;
+}
+
+@keyframes glow-attack {
+    from { box-shadow: 0 0 10px #ff0000; }
+    to { box-shadow: 0 0 25px #ff0000, 0 0 35px #ffffff; }
 }
