@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const hedgehog = document.getElementById('hedgehog');
     const messageDisplay = document.getElementById('message-display');
     const boostBar = document.getElementById('boost-bar');
-    const boostBarContainer = document.getElementById('boost-container'); // CORRIGIDO para ser consistente
+    const boostBarContainer = document.getElementById('boost-container');
     const scoreValue = document.getElementById('score-value');
     const highscoreValue = document.getElementById('highscore-value');
     const muteButton = document.getElementById('mute-button');
@@ -69,10 +69,24 @@ document.addEventListener('DOMContentLoaded', () => {
             highscoreValue.textContent = highScore;
         }
     }
+    
+    // --- CORREÇÃO: A função spawnItem precisa ser definida ANTES de ser chamada pelo gameLoop ---
+    function spawnItem() {
+        const itemDiv = document.createElement("div");
+        itemDiv.className = 'item';
+        const random = Math.random();
+        if (random < 0.5) itemDiv.classList.add("tool");
+        else if (random < 0.8) itemDiv.classList.add("code");
+        else itemDiv.classList.add("bug");
+        
+        itemDiv.style.left = gameContainer.offsetWidth + "px";
+        gameContainer.appendChild(itemDiv);
+    }
 
     // --- Loop Principal do Jogo ---
     function gameLoop() {
         if (!isGameRunning) return;
+
         gameSpeed += 0.003;
         frameCounter++;
         if (!isJumping && !isAttacking && frameCounter % 10 === 0) {
@@ -84,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         spawnTimer++;
         if (spawnTimer >= spawnInterval) {
-            spawnItem();
+            spawnItem(); // Agora esta chamada funciona, pois a função foi definida acima
             spawnTimer = 0;
             if (spawnInterval > 40) {
                 spawnInterval *= 0.99;
@@ -162,8 +176,8 @@ document.addEventListener('DOMContentLoaded', () => {
         boostBar.style.backgroundSize = `${boostPercentage}% 100%`;
         if (boostValue >= boostMax) {
             isBoostReady = true;
-            boostBarContainer.classList.add('ready');
-            attackButton.classList.add('ready');
+            if (boostBarContainer) boostBarContainer.classList.add('ready');
+            if (attackButton) attackButton.classList.add('ready');
             playSound('powerup');
         }
     }
@@ -174,11 +188,13 @@ document.addEventListener('DOMContentLoaded', () => {
         isBoostReady = false;
         boostValue = 0;
         boostBar.style.backgroundSize = '0% 100%';
-        boostBarContainer.classList.remove('ready');
-        attackButton.classList.remove('ready');
+        if (boostBarContainer) boostBarContainer.classList.remove('ready');
+        if (attackButton) attackButton.classList.remove('ready');
+        
         hedgehog.classList.remove('run-frame-1', 'run-frame-2', 'jump-frame');
         hedgehog.classList.add('attack-pose');
         playSound('explosion');
+
         setTimeout(() => {
             isAttacking = false;
             hedgehog.classList.remove('attack-pose');
@@ -229,8 +245,8 @@ document.addEventListener('DOMContentLoaded', () => {
         messageDisplay.style.display = 'none';
         updateScore(0);
         updateBoost(0);
-        boostBarContainer.classList.remove('ready');
-        attackButton.classList.remove('ready');
+        if (boostBarContainer) boostBarContainer.classList.remove('ready');
+        if (attackButton) attackButton.classList.remove('ready');
         if (!isMuted) {
              sounds.music.currentTime = 0;
              sounds.music.play();
