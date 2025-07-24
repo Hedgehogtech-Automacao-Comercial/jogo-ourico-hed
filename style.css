@@ -162,34 +162,33 @@ body {
     border-radius: 5px;
 }
 
+/* CORREÇÃO: Estilos da Barra de Boost unificados e corrigidos */
 #boost-container {
     font-size: 0.8em;
     color: white;
     text-shadow: 2px 2px #333;
     text-align: right;
+    width: 154px; /* Largura fixa para o container */
 }
-#boost-bar-wrapper { /* Renomeado para wrapper */
-    width: 150px;
+#boost-bar {
     height: 15px;
     background-color: rgba(0,0,0,0.3);
     border: 2px solid #333;
     margin-top: 5px;
-}
-#boost-bar {
-    width: 100%; /* A barra em si sempre tem 100% de largura */
-    height: 100%;
+    /* Barra interna que preenche */
     background-image: linear-gradient(to right, #00ffff, #00b8b8);
     background-size: 0% 100%; /* A mágica acontece aqui */
     background-repeat: no-repeat;
     transition: background-size 0.2s linear;
 }
-#boost-bar-wrapper.ready { /* A animação vai no wrapper */
+#boost-container.ready #boost-bar { /* A animação de brilho na barra quando o container tem a classe 'ready' */
     animation: glow 1s infinite alternate;
 }
 @keyframes glow {
     from { box-shadow: 0 0 5px #00ffff; }
-    to { box-shadow: 0 0 20px #00ffff, 0 0 30px #fff; }
+    to { box-shadow: 0 0 15px #00ffff, 0 0 25px #fff; }
 }
+
 
 #message-display {
     position: absolute; top: 50%; left: 50%;
