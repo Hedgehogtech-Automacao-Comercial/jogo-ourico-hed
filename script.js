@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const hedgehog = document.getElementById('hedgehog');
     const messageDisplay = document.getElementById('message-display');
     const boostBar = document.getElementById('boost-bar');
-    const boostBarContainer = document.getElementById('boost-container'); // ID correto do container
+    const boostBarContainer = document.getElementById('boost-container'); // ID consistente com o HTML
     const scoreValue = document.getElementById('score-value');
     const highscoreValue = document.getElementById('highscore-value');
     const muteButton = document.getElementById('mute-button');
@@ -70,6 +70,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Loop Principal do Jogo ---
     function gameLoop() {
+        if (!isGameRunning) return;
+
         gameSpeed += 0.003;
         frameCounter++;
         if (!isJumping && !isAttacking && frameCounter % 10 === 0) {
@@ -82,8 +84,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let spawnThreshold = 90 / (gameSpeed / 5);
 
-        // DIAGNÓSTICO: Imprime o estado do cronômetro no console a cada frame.
-        // console.log(`spawnTimer: ${spawnTimer}, Limite para criar item: ${spawnThreshold.toFixed(2)}`);
+        // DIAGNÓSTICO: Imprime o estado do cronômetro no console a cada ~1 segundo.
+        if (spawnTimer % 50 === 0) {
+            console.log(`spawnTimer: ${spawnTimer}, Limite para criar item: ${spawnThreshold.toFixed(2)}`);
+        }
 
         if (spawnTimer > spawnThreshold) {
             spawnItem();
@@ -161,7 +165,6 @@ document.addEventListener('DOMContentLoaded', () => {
         boostBar.style.backgroundSize = `${boostPercentage}% 100%`;
         if (boostValue >= boostMax) {
             isBoostReady = true;
-            // CORREÇÃO: Usando a referência correta para adicionar a classe 'ready'
             if (boostBarContainer) boostBarContainer.classList.add('ready');
             playSound('powerup');
         }
@@ -184,7 +187,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function spawnItem() {
-        // DIAGNÓSTICO: Mensagem que aparecerá no console toda vez que um item for criado.
         console.log("%c--- Item Criado! ---", "color: green; font-weight: bold;");
 
         const itemDiv = document.createElement("div");
@@ -198,8 +200,6 @@ document.addEventListener('DOMContentLoaded', () => {
         gameContainer.appendChild(itemDiv);
     }
 
-
-    // --- Controle do Jogo (Início, Fim, Comandos) ---
     function control(e) {
         if (e.code === 'Space') {
             e.preventDefault();
@@ -226,9 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function startGame() {
-        // DIAGNÓSTICO: Mensagem que aparecerá no console quando o jogo iniciar.
         console.log("Iniciando novo jogo...");
-
         isGameRunning = true;
         score = 0;
         gameSpeed = 5;
@@ -250,6 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function endGame(message) {
+        console.log("Fim de jogo. Mensagem: ", message);
         isGameRunning = false;
         clearInterval(gameLoopInterval);
         hedgehog.classList.add('crashed');
@@ -260,7 +259,6 @@ document.addEventListener('DOMContentLoaded', () => {
         playSound('gameover');
     }
 
-    // --- Inicialização ---
     loadHighScore();
     gameContainer.addEventListener('keydown', control);
     gameContainer.addEventListener('keyup', releaseControl);
