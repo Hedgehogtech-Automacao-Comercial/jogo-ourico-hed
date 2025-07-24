@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>HED PDV - Em Construção</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container" tabindex="0">
+        <div id="sky"></div>
+        <div id="far-clouds"></div>
+        <div id="near-clouds"></div>
+
+        <div id="ui-container">
+            <div id="score-display">PONTOS: <span id="score-value">0</span></div>
+            <div id="highscore-display">RECORD: <span id="highscore-value">0</span></div>
+            <div id="progress-container">
+                <div id="progress-bar"></div>
+            </div>
+        </div>
+        
+        <div id="message-display">
+            HED PDV
+            <span>Pressione ESPAÇO para construir</span>
+        </div>
+
+        <div id="hedgehog"></div>
+        <div id="ground"></div>
+    </div>
+
+    <button id="mute-button">🔊</button>
+
+    <audio id="music-bg" src="sons/music.mp3" loop></audio>
+    <audio id="sound-jump" src="sons/jump.wav"></audio>
+    <audio id="sound-collect" src="sons/collect.wav"></audio>
+    <audio id="sound-gameover" src="sons/gameover.wav"></audio>
+
+    <script src="script.js" defer></script>
+</body>
+</html>
