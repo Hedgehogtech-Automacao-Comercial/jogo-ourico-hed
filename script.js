@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const hedgehog = document.getElementById('hedgehog');
     const messageDisplay = document.getElementById('message-display');
     const boostBar = document.getElementById('boost-bar');
-    const boostBarWrapper = document.getElementById('boost-bar-wrapper');
+    const boostBarContainer = document.getElementById('boost-container'); // Corrigido para pegar o container
     const scoreValue = document.getElementById('score-value');
     const highscoreValue = document.getElementById('highscore-value');
     const muteButton = document.getElementById('mute-button');
@@ -80,9 +80,11 @@ document.addEventListener('DOMContentLoaded', () => {
         handleJump();
         handleItems();
         spawnTimer++;
-        if (spawnTimer > (120 / (gameSpeed / 5))) {
+        
+        // CORREÇÃO 2: Diminuído o tempo de espera inicial (de 120 para 90)
+        if (spawnTimer > (90 / (gameSpeed / 5))) {
             spawnItem();
-            spawnTimer = 0;
+            spawnTimer = 0; // Zera o cronômetro após criar um item
         }
     }
 
@@ -137,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     updateScore(10);
                     updateBoost(10);
-                    createParticle(itemRect.left, itemRect.top);
+                    // createParticle(itemRect.left, itemRect.top); // Partículas podem ser reativadas se desejado
                     playSound('collect');
                     item.remove();
                 }
@@ -157,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
         boostBar.style.backgroundSize = `${boostPercentage}% 100%`;
         if (boostValue >= boostMax) {
             isBoostReady = true;
-            boostBarWrapper.classList.add('ready');
+            boostBarContainer.classList.add('ready');
             playSound('powerup');
         }
     }
@@ -168,10 +170,10 @@ document.addEventListener('DOMContentLoaded', () => {
         isBoostReady = false;
         boostValue = 0;
         boostBar.style.backgroundSize = '0% 100%';
-        boostBarWrapper.classList.remove('ready');
+        boostBarContainer.classList.remove('ready');
         hedgehog.classList.add('attack-pose');
         hedgehog.classList.remove('run-frame-1', 'run-frame-2');
-        playSound('explosion'); // Som de ataque/explosão
+        playSound('explosion');
         setTimeout(() => {
             isAttacking = false;
             hedgehog.classList.remove('attack-pose');
@@ -211,11 +213,13 @@ document.addEventListener('DOMContentLoaded', () => {
         boostValue = 0;
         isBoostReady = false;
         isAttacking = false;
+        spawnTimer = 0; // CORREÇÃO 1: Zerando o cronômetro a cada novo jogo
         hedgehog.classList.remove('crashed');
         document.querySelectorAll('.item').forEach(item => item.remove());
         messageDisplay.style.display = 'none';
         updateScore(0);
         updateBoost(0);
+        boostBarContainer.classList.remove('ready');
         if (!isMuted) {
              sounds.music.currentTime = 0;
              sounds.music.play();
