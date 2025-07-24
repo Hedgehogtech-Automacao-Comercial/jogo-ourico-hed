@@ -37,12 +37,12 @@ body {
     background-image: url('imagens/clouds.png');
     animation: scroll 60s linear infinite;
     opacity: 0.6;
-    width: 101%; /* AJUSTE 1: Corrige linha vertical */
+    width: 101%;
 }
 #near-clouds {
     background-image: url('imagens/clouds.png');
     animation: scroll 30s linear infinite reverse;
-    width: 101%; /* AJUSTE 1: Corrige linha vertical */
+    width: 101%;
 }
 #ground {
     height: 24px;
@@ -61,20 +61,28 @@ body {
     position: absolute;
     bottom: 24px;
     left: 60px;
-    width: 55px;   /* AJUSTE 2: Tamanho aumentado */
-    height: 59px;  /* AJUSTE 2: Tamanho aumentado */
+    width: 55px;
+    height: 59px;
     z-index: 10;
     background-image: url('imagens/hedgehog-sprite.png');
     background-size: auto 100%;
-    /* AJUSTE 3: Força a transparência */
     mask-image: url('imagens/hedgehog-sprite.png');
     mask-size: auto 100%;
+    transition: background-image 0.1s;
 }
-/* AJUSTE 2: Novos valores para a animação */
 .run-frame-1 { background-position: 0 0; }
 .run-frame-2 { background-position: -55px 0; }
 .jump-frame  { background-position: -110px 0; }
 .crashed { animation: blink 0.5s 3; }
+
+/* NOVO: Estilo para a pose de ataque */
+#hedgehog.attack-pose {
+    background-image: url('imagens/hedgehog-attack.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    mask-image: url('imagens/hedgehog-attack.png'); /* Máscara para o ataque também */
+}
 
 .item {
     position: absolute;
@@ -82,30 +90,29 @@ body {
     bottom: 29px;
     background-size: contain;
     background-repeat: no-repeat;
-    /* AJUSTE 3: Força a transparência nos itens */
     -webkit-mask-size: contain;
     mask-size: contain;
     -webkit-mask-repeat: no-repeat;
     mask-repeat: no-repeat;
 }
 .tool { 
-    width: 44px;   /* AJUSTE 2: Tamanho aumentado */
-    height: 44px;  /* AJUSTE 2: Tamanho aumentado */
+    width: 44px;
+    height: 44px;
     background-image: url('imagens/item-ferramenta.png'); 
-    mask-image: url('imagens/item-ferramenta.png'); /* AJUSTE 3 */
+    mask-image: url('imagens/item-ferramenta.png');
 }
 .code { 
-    width: 50px;   /* AJUSTE 2: Tamanho aumentado */
-    height: 38px;  /* AJUSTE 2: Tamanho aumentado */
+    width: 50px;
+    height: 38px;
     bottom: 60px; 
     background-image: url('imagens/item-codigo.png');
-    mask-image: url('imagens/item-codigo.png'); /* AJUSTE 3 */
+    mask-image: url('imagens/item-codigo.png');
 }
 .bug { 
-    width: 56px;   /* AJUSTE 2: Tamanho aumentado */
-    height: 38px;  /* AJUSTE 2: Tamanho aumentado */
+    width: 56px;
+    height: 38px;
     background-image: url('imagens/obstaculo-bug.png');
-    mask-image: url('imagens/obstaculo-bug.png'); /* AJUSTE 3 */
+    mask-image: url('imagens/obstaculo-bug.png');
 }
 
 .particle {
@@ -121,6 +128,21 @@ body {
 }
 @keyframes blink {
     50% { opacity: 0.2; }
+}
+
+/* NOVO: Estilo para a animação de explosão */
+.explosion {
+    position: absolute;
+    width: 64px; /* Tamanho de um frame da sua explosão */
+    height: 64px;
+    background-image: url('imagens/explosion-sprite.png');
+    z-index: 50;
+    /* Animação que percorre 5 frames da sprite sheet */
+    animation: play-explosion 0.5s steps(5) forwards;
+}
+@keyframes play-explosion {
+    from { background-position: 0 0; }
+    to { background-position: -320px 0; } /* 64px * 5 frames */
 }
 
 /* --- INTERFACE E BOTÕES --- */
@@ -142,17 +164,32 @@ body {
     padding: 5px 10px;
     border-radius: 5px;
 }
-#progress-container {
+
+/* MUDANÇA: Estilos para a nova Barra de Boost */
+#boost-container {
+    font-size: 0.8em;
+    color: white;
+    text-shadow: 2px 2px #333;
+    text-align: right;
+}
+#boost-bar {
     width: 150px;
     height: 15px;
     background-color: rgba(0,0,0,0.3);
     border: 2px solid #333;
+    margin-top: 5px;
+    /* Barra interna que preenche */
+    background-image: linear-gradient(to right, #00ffff, #00b8b8);
+    background-size: 0% 100%;
+    background-repeat: no-repeat;
+    transition: background-size 0.2s linear;
 }
-#progress-bar {
-    width: 0%;
-    height: 100%;
-    background-color: #f39c12;
-    transition: width 0.5s ease-out;
+#boost-bar.ready {
+    animation: glow 1s infinite alternate;
+}
+@keyframes glow {
+    from { box-shadow: 0 0 5px #00ffff; }
+    to { box-shadow: 0 0 20px #00ffff, 0 0 30px #fff; }
 }
 
 #message-display {
