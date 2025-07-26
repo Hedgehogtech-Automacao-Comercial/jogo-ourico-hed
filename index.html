@@ -12,6 +12,7 @@
         <div id="sky"></div>
         <div id="far-clouds"></div>
         <div id="near-clouds"></div>
+
         <div id="ui-container">
             <div id="score-display">PONTOS: <span id="score-value">0</span></div>
             <div id="highscore-display">RECORD: <span id="highscore-value">0</span></div>
@@ -20,10 +21,33 @@
                 <div id="boost-bar"></div>
             </div>
         </div>
+        
         <div id="message-display">
             HED PDV
             <span>Pressione ESPAÇO para construir</span>
         </div>
+
+        <div id="form-container" class="overlay" style="display: none;">
+            <div class="modal">
+                <h2>Recorde!</h2>
+                <p>Sua pontuação: <span id="final-score">0</span></p>
+                <form id="register-form">
+                    <input type="text" id="player-name" placeholder="Seu nome" required maxlength="20">
+                    <input type="email" id="player-email" placeholder="Seu e-mail (opcional)">
+                    <button type="submit">Enviar Pontuação</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="leaderboard-container" class="overlay" style="display: none;">
+            <div class="modal">
+                <h2>Ranking de Construtores</h2>
+                <ol id="leaderboard-list">
+                    </ol>
+                <button id="restart-button">Jogar Novamente</button>
+            </div>
+        </div>
+
         <div id="hedgehog"></div>
         <div id="ground"></div>
         <div id="attack-button">S</div>
