@@ -9,6 +9,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const highscoreValue = document.getElementById('highscore-value');
     const muteButton = document.getElementById('mute-button');
     const attackButton = document.getElementById('attack-button');
+    const formContainer = document.getElementById('form-container');
+    const finalScoreDisplay = document.getElementById('final-score');
+    const registerForm = document.getElementById('register-form');
+    const leaderboardContainer = document.getElementById('leaderboard-container');
+    const leaderboardList = document.getElementById('leaderboard-list');
+    const restartButton = document.getElementById('restart-button');
     const sounds = {
         music: document.getElementById('music-bg'),
         jump: document.getElementById('sound-jump'),
@@ -69,24 +75,60 @@ document.addEventListener('DOMContentLoaded', () => {
             highscoreValue.textContent = highScore;
         }
     }
-    
-    // --- CORREÇÃO: A função spawnItem precisa ser definida ANTES de ser chamada pelo gameLoop ---
-    function spawnItem() {
-        const itemDiv = document.createElement("div");
-        itemDiv.className = 'item';
-        const random = Math.random();
-        if (random < 0.5) itemDiv.classList.add("tool");
-        else if (random < 0.8) itemDiv.classList.add("code");
-        else itemDiv.classList.add("bug");
-        
-        itemDiv.style.left = gameContainer.offsetWidth + "px";
-        gameContainer.appendChild(itemDiv);
+
+    // --- Lógica de Backend ---
+    async function submitScore(name, email, score) {
+        const modal = formContainer.querySelector('.modal');
+        modal.innerHTML = '<h2>Enviando pontuação...</h2>'; // Feedback visual
+        try {
+            const response = await fetch('/api/submit-score', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, score })
+            });
+            if (!response.ok) {
+                throw new Error('Falha ao enviar pontuação');
+            }
+            await showLeaderboard();
+        } catch (error) {
+            console.error(error);
+            modal.innerHTML = `<h2>Erro ao enviar.</h2> <p>Por favor, tente novamente mais tarde.</p><button id="close-error-btn">Ok</button>`;
+            document.getElementById('close-error-btn').addEventListener('click', () => {
+                formContainer.style.display = 'none';
+                messageDisplay.innerHTML = `Pontuação final: ${score} <span>Pressione ESPAÇO para reiniciar</span>`;
+                messageDisplay.style.display = 'block';
+            });
+        }
+    }
+
+    async function showLeaderboard() {
+        formContainer.style.display = 'none';
+        leaderboardContainer.style.display = 'flex';
+        leaderboardList.innerHTML = '<li>Carregando...</li>';
+
+        try {
+            const response = await fetch('/api/leaderboard');
+            const scores = await response.json();
+            
+            leaderboardList.innerHTML = '';
+            if (scores.length === 0) {
+                leaderboardList.innerHTML = '<li>Seja o primeiro a pontuar!</li>';
+            } else {
+                scores.forEach((player, index) => {
+                    const li = document.createElement('li');
+                    li.textContent = `#${index + 1} ${player.name} - ${player.score} pontos`;
+                    leaderboardList.appendChild(li);
+                });
+            }
+        } catch (error) {
+            console.error(error);
+            leaderboardList.innerHTML = '<li>Não foi possível carregar o ranking.</li>';
+        }
     }
 
     // --- Loop Principal do Jogo ---
     function gameLoop() {
         if (!isGameRunning) return;
-
         gameSpeed += 0.003;
         frameCounter++;
         if (!isJumping && !isAttacking && frameCounter % 10 === 0) {
@@ -98,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         spawnTimer++;
         if (spawnTimer >= spawnInterval) {
-            spawnItem(); // Agora esta chamada funciona, pois a função foi definida acima
+            spawnItem();
             spawnTimer = 0;
             if (spawnInterval > 40) {
                 spawnInterval *= 0.99;
@@ -106,6 +148,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function spawnItem() {
+        const itemDiv = document.createElement("div");
+        itemDiv.className = 'item';
+        const random = Math.random();
+        if (random < 0.5) itemDiv.classList.add("tool");
+        else if (random < 0.8) itemDiv.classList.add("code");
+        else itemDiv.classList.add("bug");
+        
+        itemDiv.style.left = gameContainer.offsetWidth + "px";
+        gameContainer.appendChild(itemDiv);
+    }
+    
     // --- Lógicas de Gameplay ---
     function handleJump() {
         if (isJumping) {
@@ -194,7 +248,6 @@ document.addEventListener('DOMContentLoaded', () => {
         hedgehog.classList.remove('run-frame-1', 'run-frame-2', 'jump-frame');
         hedgehog.classList.add('attack-pose');
         playSound('explosion');
-
         setTimeout(() => {
             isAttacking = false;
             hedgehog.classList.remove('attack-pose');
@@ -223,14 +276,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     function handleKeyUp(e) { if (e.code === 'Space') { handleJumpRelease(); } }
     
-    attackButton.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        triggerAttack();
-    });
-    gameContainer.addEventListener('touchstart', (e) => { e.preventDefault(); handleJumpPress(); });
-    gameContainer.addEventListener('touchend', (e) => { e.preventDefault(); handleJumpRelease(); });
-
     function startGame() {
         isGameRunning = true;
         score = 0;
@@ -242,7 +287,10 @@ document.addEventListener('DOMContentLoaded', () => {
         spawnInterval = 100;
         hedgehog.classList.remove('crashed', 'attack-pose');
         document.querySelectorAll('.item').forEach(item => item.remove());
-        messageDisplay.style.display = 'none';
+        messageDisplay.style.display = 'block';
+        messageDisplay.innerHTML = `HED PDV <span>Pressione ESPAÇO para construir</span>`;
+        formContainer.style.display = 'none';
+        leaderboardContainer.style.display = 'none';
         updateScore(0);
         updateBoost(0);
         if (boostBarContainer) boostBarContainer.classList.remove('ready');
@@ -259,14 +307,42 @@ document.addEventListener('DOMContentLoaded', () => {
         clearInterval(gameLoopInterval);
         hedgehog.classList.add('crashed');
         saveHighScore();
-        messageDisplay.innerHTML = `${message} <span>Pressione ESPAÇO para reiniciar</span>`;
-        messageDisplay.style.display = 'block';
         sounds.music.pause();
         playSound('gameover');
+
+        finalScoreDisplay.textContent = score;
+        formContainer.style.display = 'flex';
+        messageDisplay.style.display = 'none';
     }
 
+    // --- Inicialização e Event Listeners ---
     loadHighScore();
+    
+    // Controles do Teclado
     gameContainer.addEventListener('keydown', handleKeyDown);
     gameContainer.addEventListener('keyup', handleKeyUp);
+    
+    // Controles de Toque
+    attackButton.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        triggerAttack();
+    });
+    gameContainer.addEventListener('touchstart', (e) => { e.preventDefault(); handleJumpPress(); });
+    gameContainer.addEventListener('touchend', (e) => { e.preventDefault(); handleJumpRelease(); });
+    
+    // Controles do Formulário e Ranking
+    registerForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const playerName = document.getElementById('player-name').value;
+        const playerEmail = document.getElementById('player-email').value;
+        submitScore(playerName, playerEmail, score);
+    });
+
+    restartButton.addEventListener('click', () => {
+        leaderboardContainer.style.display = 'none';
+        startGame();
+    });
+
     gameContainer.focus();
 });
