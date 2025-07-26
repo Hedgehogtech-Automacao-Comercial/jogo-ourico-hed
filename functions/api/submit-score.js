@@ -1,38 +1,37 @@
-// Arquivo: functions/api/submit-score.js
+// Arquivo: functions/api/submit-score.js (Versão 2.0 - com lógica de update)
 
-/**
- * Define a função que responde a requisições POST.
- * @param {object} context - Contém a requisição (request) e o ambiente (env).
- */
 export async function onRequestPost({ request, env }) {
   try {
-    // 1. Pega os dados JSON enviados pelo jogo.
-    const data = await request.json();
-    const { name, email, score } = data;
+    const { name, email, score } = await request.json();
 
-    // 2. Validação simples para garantir que os dados essenciais chegaram.
     if (!name || typeof score !== 'number') {
       return new Response('Dados inválidos: nome e pontuação são obrigatórios.', { status: 400 });
     }
 
-    // 3. Conecta-se ao banco de dados D1 (vinculado como 'DB' nas configurações).
-    // Prepara um comando SQL seguro para evitar injeção de SQL.
-    const ps = env.DB.prepare(
-      'INSERT INTO scores (name, email, score) VALUES (?, ?, ?)'
-    );
+    // 1. Procura se já existe uma pontuação para este jogador (usando o nome como identificador único)
+    const psSelect = env.DB.prepare('SELECT score FROM scores WHERE name = ?');
+    const existing = await psSelect.bind(name).first();
 
-    // 4. Executa o comando, inserindo os dados no banco de dados.
-    await ps.bind(name, email || null, score).run();
-
-    // 5. Retorna uma resposta de sucesso para o jogo.
-    return new Response(JSON.stringify({ message: 'Pontuação salva com sucesso!' }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    if (existing) {
+      // 2. Se o jogador já existe, compara a pontuação
+      if (score > existing.score) {
+        // Se a nova pontuação é MAIOR, atualiza (sobrescreve)
+        const psUpdate = env.DB.prepare('UPDATE scores SET score = ?, email = ? WHERE name = ?');
+        await psUpdate.bind(score, email || null, name).run();
+        return new Response(JSON.stringify({ message: 'Recorde pessoal atualizado!' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      } else {
+        // Se a nova pontuação NÃO é maior, não faz nada
+        return new Response(JSON.stringify({ message: 'Pontuação não superou o recorde pessoal.' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+    } else {
+      // 3. Se o jogador não existe, insere o novo registro
+      const psInsert = env.DB.prepare('INSERT INTO scores (name, email, score) VALUES (?, ?, ?)');
+      await psInsert.bind(name, email || null, score).run();
+      return new Response(JSON.stringify({ message: 'Pontuação salva com sucesso!' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
 
   } catch (e) {
-    // Em caso de qualquer erro, retorna uma mensagem de erro genérica.
-    console.error(e); // Loga o erro real no console da Cloudflare para depuração
+    console.error(e);
     return new Response('Erro interno do servidor.', { status: 500 });
   }
 }
