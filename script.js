@@ -44,15 +44,75 @@ document.addEventListener('DOMContentLoaded', () => {
     const maxJumpTime = 15;
     let gameControlsActive = true;
 
-    // --- Funções de Áudio ---
+    // --- Funções Principais de Controle (startGame, endGame) ---
+    // Colocadas no início para garantir que sejam conhecidas por todas as outras funções
+    function startGame() {
+        gameControlsActive = true;
+        isGameRunning = true;
+        score = 0;
+        gameSpeed = 5;
+        boostValue = 0;
+        isBoostReady = false;
+        isAttacking = false;
+        spawnTimer = 0;
+        spawnInterval = 100;
+        hedgehog.classList.remove("crashed", "attack-pose", "jump-frame");
+        hedgehog.classList.add("run-frame-1");
+        document.querySelectorAll(".item").forEach((item) => item.remove());
+        
+        // CORREÇÃO: Esconde a mensagem inicial ao começar
+        messageDisplay.style.display = "none";
+        
+        consentContainer.style.display = "none";
+        formContainer.style.display = "none";
+        leaderboardContainer.style.display = "none";
+        updateScore(0);
+        updateBoost(0);
+        if (boostBarContainer) boostBarContainer.classList.remove("ready");
+        if (attackButton) attackButton.classList.remove("ready");
+        
+        if (!isMuted) {
+            sounds.music.currentTime = 0;
+            sounds.music.play().catch(e => {}); // Ignora erro de autoplay se houver
+        } else {
+            sounds.music.pause();
+        }
+        
+        gameLoopInterval = setInterval(gameLoop, 20);
+    }
+    
+    function endGame(message) {
+        gameControlsActive = false;
+        isGameRunning = false;
+        clearInterval(gameLoopInterval);
+        hedgehog.classList.add("crashed");
+        saveHighScore();
+        sounds.music.pause();
+        playSound("gameover");
+
+        consentContainer.style.display = "flex";
+        messageDisplay.style.display = "none";
+    }
+
+    // --- Funções de Áudio e Pontuação ---
     function playSound(sound) {
         if (!isMuted && sounds[sound]) {
             sounds[sound].currentTime = 0;
             sounds[sound].play().catch(e => console.error("Erro ao tocar som:", e));
         }
     }
+    
+    function toggleMute() {
+        isMuted = !isMuted;
+        muteButton.textContent = isMuted ? '🔇' : '🔊';
+        sounds.music.muted = isMuted;
+        if (!isMuted && isGameRunning) {
+            sounds.music.play().catch(e => {});
+        } else {
+            sounds.music.pause();
+        }
+    }
 
-    // --- Funções de Pontuação ---
     function loadHighScore() {
         highScore = localStorage.getItem("hedgehogHighScoreV2") || 0;
         highscoreValue.textContent = highScore;
@@ -84,9 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
             modal.innerHTML = `<h2>Erro ao enviar.</h2><button id="close-error-btn">Ok</button>`;
             document.getElementById("close-error-btn").addEventListener("click", () => {
                 formContainer.style.display = "none";
-                messageDisplay.innerHTML = `Pontuação final: ${score} <span>Pressione ESPAÇO para reiniciar</span>`;
-                messageDisplay.style.display = "block";
-                gameControlsActive = true;
+                startGame(); // Reinicia o jogo ao invés de mostrar a mensagem
             });
         }
     }
@@ -126,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // --- Funções Auxiliares de Gameplay (Definidas ANTES do gameLoop) ---
+    // --- Funções Auxiliares de Gameplay ---
     function spawnItem() {
         const itemDiv = document.createElement("div");
         itemDiv.className = "item";
@@ -176,12 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             const hedgehogRect = hedgehog.getBoundingClientRect();
             const itemRect = item.getBoundingClientRect();
-            if (
-                hedgehogRect.left < itemRect.right &&
-                hedgehogRect.right > itemRect.left &&
-                hedgehogRect.top < itemRect.bottom &&
-                hedgehogRect.bottom > itemRect.top
-            ) {
+            if ( hedgehogRect.left < itemRect.right && hedgehogRect.right > itemRect.left && hedgehogRect.top < itemRect.bottom && hedgehogRect.bottom > itemRect.top ) {
                 if (item.classList.contains("bug")) {
                     if (isAttacking) {
                         createExplosion(itemRect.left, itemRect.top);
@@ -217,7 +270,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         handleJump();
         handleItems();
-
         spawnTimer++;
         if (spawnTimer >= spawnInterval) {
             spawnItem();
@@ -255,11 +307,9 @@ document.addEventListener('DOMContentLoaded', () => {
         boostBar.style.backgroundSize = "0% 100%";
         if (boostBarContainer) boostBarContainer.classList.remove("ready");
         if (attackButton) attackButton.classList.remove("ready");
-
         hedgehog.classList.remove("run-frame-1", "run-frame-2", "jump-frame");
         hedgehog.classList.add("attack-pose");
         playSound("explosion");
-
         setTimeout(() => {
             isAttacking = false;
             hedgehog.classList.remove("attack-pose");
@@ -301,50 +351,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    function startGame() {
-        gameControlsActive = true;
-        isGameRunning = true;
-        score = 0;
-        gameSpeed = 5;
-        boostValue = 0;
-        isBoostReady = false;
-        isAttacking = false;
-        spawnTimer = 0;
-        spawnInterval = 100;
-        hedgehog.classList.remove("crashed", "attack-pose", "jump-frame");
-        hedgehog.classList.add("run-frame-1");
-        document.querySelectorAll(".item").forEach((item) => item.remove());
-        messageDisplay.style.display = "block";
-        messageDisplay.innerHTML = `HED PDV <span>Pressione ESPAÇO para construir</span>`;
-        consentContainer.style.display = "none";
-        formContainer.style.display = "none";
-        leaderboardContainer.style.display = "none";
-        updateScore(0);
-        updateBoost(0);
-        if (boostBarContainer) boostBarContainer.classList.remove("ready");
-        if (attackButton) attackButton.classList.remove("ready");
-        if (!isMuted) {
-            sounds.music.currentTime = 0;
-            sounds.music.play();
-        } else {
-            sounds.music.pause();
-        }
-        gameLoopInterval = setInterval(gameLoop, 20);
-    }
-
-    function endGame(message) {
-        gameControlsActive = false;
-        isGameRunning = false;
-        clearInterval(gameLoopInterval);
-        hedgehog.classList.add("crashed");
-        saveHighScore();
-        sounds.music.pause();
-        playSound("gameover");
-
-        consentContainer.style.display = "flex";
-        messageDisplay.style.display = "none";
-    }
-
     function handleFormSubmit(e) {
         e.preventDefault();
         const playerName = formContainer.querySelector("#player-name").value;
@@ -355,35 +361,42 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Inicialização e Event Listeners ---
     loadHighScore();
 
-    gameContainer.addEventListener("keydown", handleKeyDown);
-    gameContainer.addEventListener("keyup", handleKeyUp);
+    // Listener para o botão de Mute
+    muteButton.addEventListener('click', toggleMute);
+    muteButton.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        toggleMute();
+    });
 
+    // Listeners do Jogo (Teclado)
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+
+    // Listeners do Jogo (Toque)
     attackButton.addEventListener("touchstart", (e) => {
         e.preventDefault();
         e.stopPropagation();
         if (gameControlsActive) triggerAttack();
     });
-
     gameContainer.addEventListener("touchstart", (e) => {
         if (!gameControlsActive) return;
-        if (e.target.closest(".modal") || e.target === attackButton) return;
+        if (e.target.closest(".modal") || e.target === attackButton || e.target === muteButton) return;
         e.preventDefault();
         handleJumpPress();
     });
     gameContainer.addEventListener("touchend", (e) => {
         if (!gameControlsActive) return;
-        if (e.target.closest(".modal") || e.target === attackButton) return;
+        if (e.target.closest(".modal") || e.target === attackButton || e.target === muteButton) return;
         e.preventDefault();
         handleJumpRelease();
     });
 
+    // Listeners do fluxo de fim de jogo
     consentCheckbox.addEventListener("change", () => {
         consentContinueButton.disabled = !consentCheckbox.checked;
     });
-
     consentContinueButton.addEventListener("click", () => {
         consentContainer.style.display = "none";
-
         formContainer.innerHTML = `
             <div class="modal">
                 <h2>Recorde!</h2>
@@ -394,16 +407,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button type="submit">Enviar Pontuação</button>
                 </form>
             </div>`;
-
         formContainer.style.display = "flex";
         formContainer.querySelector("#register-form").addEventListener("submit", handleFormSubmit);
-
         setTimeout(() => {
             document.getElementById("player-name").focus();
         }, 100);
     });
-
-    // O listener do restartButton é adicionado dinamicamente quando o leaderboard é mostrado.
 
     gameContainer.focus();
 });
