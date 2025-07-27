@@ -2,7 +2,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Referências aos Elementos ---
     const gameContainer = document.getElementById('game-container');
     const hedgehog = document.getElementById('hedgehog');
-    // ... (resto das referências continua o mesmo)
     const messageDisplay = document.getElementById('message-display');
     const boostBar = document.getElementById('boost-bar');
     const boostBarContainer = document.getElementById('boost-container');
@@ -10,9 +9,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const highscoreValue = document.getElementById('highscore-value');
     const muteButton = document.getElementById('mute-button');
     const attackButton = document.getElementById('attack-button');
+    const consentContainer = document.getElementById('consent-container');
+    const consentCheckbox = document.getElementById('lgpd-consent');
+    const consentContinueButton = document.getElementById('consent-continue-button');
     const formContainer = document.getElementById('form-container');
-    const finalScoreDisplay = document.getElementById('final-score');
-    const registerForm = document.getElementById('register-form');
     const leaderboardContainer = document.getElementById('leaderboard-container');
     const leaderboardList = document.getElementById('leaderboard-list');
     const restartButton = document.getElementById('restart-button');
@@ -27,7 +27,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Configurações e Estado do Jogo ---
     let isGameRunning = false, isJumping = false, isMuted = true;
-    // ... (resto das variáveis de estado continua o mesmo)
     let score = 0, highScore = 0;
     let hedgehogBottom = 24;
     let verticalVelocity = 0;
@@ -47,12 +46,98 @@ document.addEventListener('DOMContentLoaded', () => {
     const maxJumpTime = 15;
     let gameControlsActive = true;
 
-    // --- Funções de Áudio, Pontuação, Backend, Loop, etc ---
-    // (Nenhuma mudança em playSound, loadHighScore, saveHighScore, submitScore, showLeaderboard, gameLoop, spawnItem, handleJump, createExplosion, handleItems, updateScore, updateBoost, triggerAttack)
-    function playSound(e){if(!isMuted&&sounds[e]){sounds[e].currentTime=0;sounds[e].play().catch(e=>console.error("Erro ao tocar som:",e))}}
-    muteButton.addEventListener("click",()=>{isMuted=!isMuted;muteButton.textContent=isMuted?"🔇":"🔊";sounds.music.muted=isMuted;if(!isMuted&&isGameRunning)sounds.music.play();else sounds.music.pause()});function loadHighScore(){highScore=localStorage.getItem("hedgehogHighScoreV2")||0;highscoreValue.textContent=highScore}
-    function saveHighScore(){if(score>highScore){highScore=score;localStorage.setItem("hedgehogHighScoreV2",highScore);highscoreValue.textContent=highScore}}async function submitScore(e,t,o){const n=formContainer.querySelector(".modal");n.innerHTML="<h2>Enviando pontuação...</h2>";try{const a=await fetch("/api/submit-score",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:e,email:t,score:o})});if(!a.ok)throw new Error("Falha ao enviar pontuação");await showLeaderboard()}catch(r){console.error(r);n.innerHTML=`<h2>Erro ao enviar.</h2><button id="close-error-btn">Ok</button>`;document.getElementById("close-error-btn").addEventListener("click",()=>{formContainer.style.display="none";messageDisplay.innerHTML=`Pontuação final: ${score} <span>Pressione ESPAÇO para reiniciar</span>`;messageDisplay.style.display="block";gameControlsActive=true})}}
-    async function showLeaderboard(){formContainer.style.display="none";leaderboardContainer.style.display="flex";leaderboardList.innerHTML="<li>Carregando...</li>";try{const e=await fetch("/api/leaderboard"),t=await e.json();leaderboardList.innerHTML="";if(0===t.length)leaderboardList.innerHTML="<li>Seja o primeiro a pontuar!</li>";else t.forEach((e,t)=>{const o=document.createElement("li");o.textContent=`#${t+1} ${e.name} - ${e.score} pontos`;leaderboardList.appendChild(o)})}catch(o){console.error(o);leaderboardList.innerHTML="<li>Não foi possível carregar o ranking.</li>"}}
+    // --- Funções de Áudio ---
+    function playSound(sound) {
+        if (!isMuted && sounds[sound]) {
+            sounds[sound].currentTime = 0;
+            sounds[sound].play().catch(e => console.error("Erro ao tocar som:", e));
+        }
+    }
+    muteButton.addEventListener('click', () => {
+        isMuted = !isMuted;
+        muteButton.textContent = isMuted ? '🔇' : '🔊';
+        sounds.music.muted = isMuted;
+        if (!isMuted && isGameRunning) {
+            sounds.music.play();
+        } else {
+            sounds.music.pause();
+        }
+    });
+
+    // --- Funções de Pontuação ---
+    function loadHighScore() {
+        highScore = localStorage.getItem('hedgehogHighScoreV2') || 0;
+        highscoreValue.textContent = highScore;
+    }
+    function saveHighScore() {
+        if (score > highScore) {
+            highScore = score;
+            localStorage.setItem('hedgehogHighScoreV2', highScore);
+            highscoreValue.textContent = highScore;
+        }
+    }
+
+    // --- Lógica de Backend ---
+    async function submitScore(name, email, score) {
+        const modal = formContainer.querySelector('.modal');
+        modal.innerHTML = '<h2>Enviando pontuação...</h2>';
+        try {
+            const response = await fetch('/api/submit-score', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, score, consent: true })
+            });
+            if (!response.ok) {
+                throw new Error('Falha ao enviar pontuação');
+            }
+            await showLeaderboard();
+        } catch (error) {
+            console.error(error);
+            modal.innerHTML = `<h2>Erro ao enviar.</h2><button id="close-error-btn">Ok</button>`;
+            document.getElementById('close-error-btn').addEventListener('click', () => {
+                formContainer.style.display = 'none';
+                messageDisplay.innerHTML = `Pontuação final: ${score} <span>Pressione ESPAÇO para reiniciar</span>`;
+                messageDisplay.style.display = 'block';
+                gameControlsActive = true;
+            });
+        }
+    }
+
+    async function showLeaderboard() {
+        formContainer.style.display = 'none';
+        leaderboardContainer.style.display = 'flex';
+        leaderboardList.innerHTML = '<li>Carregando...</li>';
+        leaderboardContainer.querySelector('.modal').innerHTML = `
+            <h2>Ranking de Construtores</h2>
+            <ol id="leaderboard-list">${leaderboardList.innerHTML}</ol>
+            <button id="restart-button">Jogar Novamente</button>`;
+        
+        leaderboardContainer.querySelector('#restart-button').addEventListener('click', () => {
+             leaderboardContainer.style.display = 'none';
+             startGame();
+        });
+
+        try {
+            const response = await fetch('/api/leaderboard');
+            const scores = await response.json();
+            const list = leaderboardContainer.querySelector('#leaderboard-list');
+            list.innerHTML = '';
+            if (scores.length === 0) {
+                list.innerHTML = '<li>Seja o primeiro a pontuar!</li>';
+            } else {
+                scores.forEach((player, index) => {
+                    const li = document.createElement('li');
+                    li.textContent = `#${index + 1} ${player.name} - ${player.score} pontos`;
+                    list.appendChild(li);
+                });
+            }
+        } catch (error) {
+            console.error(error);
+            leaderboardContainer.querySelector('#leaderboard-list').innerHTML = '<li>Não foi possível carregar o ranking.</li>';
+        }
+    }
+    
+    // --- Loop Principal e Lógicas de Gameplay ---
     function gameLoop(){if(!isGameRunning)return;gameSpeed+=.003;frameCounter++;!isJumping&&!isAttacking&&frameCounter%10===0&&(hedgehog.classList.contains("run-frame-1")?(hedgehog.classList.remove("run-frame-1"),hedgehog.classList.add("run-frame-2")):(hedgehog.classList.remove("run-frame-2"),hedgehog.classList.add("run-frame-1")));handleJump();handleItems();spawnTimer++;if(spawnTimer>=spawnInterval){spawnItem();spawnTimer=0;spawnInterval>40&&(spawnInterval*=.99)}}
     function spawnItem(){const e=document.createElement("div");e.className="item";const t=Math.random();t<.5?e.classList.add("tool"):t<.8?e.classList.add("code"):e.classList.add("bug"),e.style.left=gameContainer.offsetWidth+"px",gameContainer.appendChild(e)}
     function handleJump(){if(isJumping){isJumpKeyDown&&jumpTimeCounter<maxJumpTime?(verticalVelocity+=.35,jumpTimeCounter++):void 0;hedgehogBottom+=verticalVelocity;verticalVelocity-=gravity;if(hedgehogBottom<=24){hedgehogBottom=24;isJumping=false;hedgehog.classList.remove("jump-frame");hedgehog.classList.add("run-frame-1")}hedgehog.style.bottom=hedgehogBottom+"px"}}
@@ -63,9 +148,14 @@ document.addEventListener('DOMContentLoaded', () => {
     function triggerAttack(){if(!isBoostReady||isAttacking)return;isAttacking=true,isBoostReady=false,boostValue=0,boostBar.style.backgroundSize="0% 100%",boostBarContainer&&boostBarContainer.classList.remove("ready"),attackButton&&attackButton.classList.remove("ready"),hedgehog.classList.remove("run-frame-1","run-frame-2","jump-frame"),hedgehog.classList.add("attack-pose"),playSound("explosion"),setTimeout(()=>{isAttacking=false,hedgehog.classList.remove("attack-pose");hedgehog.classList.add("run-frame-1")},500)}
     function handleJumpPress(){if(!gameControlsActive)return;if(!isGameRunning)startGame();else if(!isJumping){isJumping=true,isJumpKeyDown=true,jumpTimeCounter=0,verticalVelocity=initialJumpStrength,hedgehog.classList.add("jump-frame"),hedgehog.classList.remove("run-frame-1","run-frame-2","attack-pose"),playSound("jump")}}
     function handleJumpRelease(){isJumpKeyDown=false}
-    function handleKeyDown(e){"Space"===e.code&&(e.preventDefault(),handleJumpPress());"KeyS"===e.code&&isGameRunning&&gameControlsActive&&triggerAttack()}
-    function handleKeyUp(e){"Space"===e.code&&handleJumpRelease()}
-
+    
+    // --- Controle do Jogo (Início, Fim, Comandos) ---
+    function handleKeyDown(e) {
+        if (e.code === 'Space') { e.preventDefault(); handleJumpPress(); }
+        if (e.code === 'KeyS') { if (isGameRunning && gameControlsActive) triggerAttack(); }
+    }
+    function handleKeyUp(e) { if (e.code === 'Space') { handleJumpRelease(); } }
+    
     function startGame() {
         gameControlsActive = true;
         isGameRunning = true;
@@ -79,7 +169,9 @@ document.addEventListener('DOMContentLoaded', () => {
         hedgehog.classList.remove('crashed', 'attack-pose', 'jump-frame');
         hedgehog.classList.add('run-frame-1');
         document.querySelectorAll('.item').forEach(item => item.remove());
-        messageDisplay.style.display = 'none';
+        messageDisplay.style.display = 'block';
+        messageDisplay.innerHTML = `HED PDV <span>Pressione ESPAÇO para construir</span>`;
+        consentContainer.style.display = 'none';
         formContainer.style.display = 'none';
         leaderboardContainer.style.display = 'none';
         updateScore(0);
@@ -95,7 +187,6 @@ document.addEventListener('DOMContentLoaded', () => {
         gameLoopInterval = setInterval(gameLoop, 20);
     }
 
-    // CORREÇÃO: Função endGame atualizada para focar no campo de nome
     function endGame(message) {
         gameControlsActive = false;
         isGameRunning = false;
@@ -104,26 +195,9 @@ document.addEventListener('DOMContentLoaded', () => {
         saveHighScore();
         sounds.music.pause();
         playSound('gameover');
-
-        const modal = formContainer.querySelector('.modal');
-        modal.innerHTML = `
-            <h2>Recorde!</h2>
-            <p>Sua pontuação: <span id="final-score">${score}</span></p>
-            <form id="register-form">
-                <input type="text" id="player-name" placeholder="Seu nome" required maxlength="20">
-                <input type="email" id="player-email" placeholder="Seu e-mail (opcional)">
-                <button type="submit">Enviar Pontuação</button>
-            </form>`;
         
-        formContainer.querySelector('#register-form').addEventListener('submit', handleFormSubmit);
-        
-        formContainer.style.display = 'flex';
+        consentContainer.style.display = 'flex';
         messageDisplay.style.display = 'none';
-
-        // CORREÇÃO: Foca no campo de nome para abrir o teclado
-        setTimeout(() => {
-            document.getElementById('player-name').focus();
-        }, 100); 
     }
 
     function handleFormSubmit(e) {
@@ -144,23 +218,45 @@ document.addEventListener('DOMContentLoaded', () => {
         e.stopPropagation();
         if (gameControlsActive) triggerAttack();
     });
-
-    // CORREÇÃO: Listener de toque principal agora verifica se os controles estão ativos
+    
     gameContainer.addEventListener('touchstart', (e) => {
         if (!gameControlsActive) return;
-        // Impede que o toque em botões acione o pulo
-        if (e.target === attackButton || e.target.closest('.modal')) return;
+        if (e.target.closest('.modal') || e.target.closest('#attack-button')) return;
         e.preventDefault();
         handleJumpPress();
     });
     gameContainer.addEventListener('touchend', (e) => {
         if (!gameControlsActive) return;
-        if (e.target === attackButton || e.target.closest('.modal')) return;
+        if (e.target.closest('.modal') || e.target.closest('#attack-button')) return;
         e.preventDefault();
         handleJumpRelease();
     });
     
-    registerForm.addEventListener('submit', handleFormSubmit);
+    consentCheckbox.addEventListener('change', () => {
+        consentContinueButton.disabled = !consentCheckbox.checked;
+    });
+
+    consentContinueButton.addEventListener('click', () => {
+        consentContainer.style.display = 'none';
+        
+        formContainer.innerHTML = `
+            <div class="modal">
+                <h2>Recorde!</h2>
+                <p>Sua pontuação: <span>${score}</span></p>
+                <form id="register-form">
+                    <input type="text" id="player-name" placeholder="Seu nome" required maxlength="20">
+                    <input type="email" id="player-email" placeholder="Seu e-mail (opcional)">
+                    <button type="submit">Enviar Pontuação</button>
+                </form>
+            </div>`;
+        
+        formContainer.style.display = 'flex';
+        formContainer.querySelector('#register-form').addEventListener('submit', handleFormSubmit);
+
+        setTimeout(() => {
+            document.getElementById('player-name').focus();
+        }, 100);
+    });
 
     restartButton.addEventListener('click', () => {
         leaderboardContainer.style.display = 'none';
