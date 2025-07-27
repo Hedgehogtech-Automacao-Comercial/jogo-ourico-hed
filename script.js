@@ -85,6 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch('/api/submit-score', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                // CORREÇÃO: Adicionado o campo 'consent: true' ao pacote de dados
                 body: JSON.stringify({ name, email, score, consent: true })
             });
             if (!response.ok) {
@@ -106,11 +107,13 @@ document.addEventListener('DOMContentLoaded', () => {
     async function showLeaderboard() {
         formContainer.style.display = 'none';
         leaderboardContainer.style.display = 'flex';
-        leaderboardList.innerHTML = '<li>Carregando...</li>';
-        leaderboardContainer.querySelector('.modal').innerHTML = `
-            <h2>Ranking de Construtores</h2>
-            <ol id="leaderboard-list">${leaderboardList.innerHTML}</ol>
-            <button id="restart-button">Jogar Novamente</button>`;
+        // Garante que o conteúdo do modal e o listener do botão de restart sejam recriados
+        leaderboardContainer.innerHTML = `
+            <div class="modal">
+                <h2>Ranking de Construtores</h2>
+                <ol id="leaderboard-list"><li>Carregando...</li></ol>
+                <button id="restart-button">Jogar Novamente</button>
+            </div>`;
         
         leaderboardContainer.querySelector('#restart-button').addEventListener('click', () => {
              leaderboardContainer.style.display = 'none';
@@ -221,13 +224,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     gameContainer.addEventListener('touchstart', (e) => {
         if (!gameControlsActive) return;
-        if (e.target.closest('.modal') || e.target.closest('#attack-button')) return;
+        if (e.target.closest('.modal') || e.target === attackButton) return;
         e.preventDefault();
         handleJumpPress();
     });
     gameContainer.addEventListener('touchend', (e) => {
         if (!gameControlsActive) return;
-        if (e.target.closest('.modal') || e.target.closest('#attack-button')) return;
+        if (e.target.closest('.modal') || e.target === attackButton) return;
         e.preventDefault();
         handleJumpRelease();
     });
@@ -242,7 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
         formContainer.innerHTML = `
             <div class="modal">
                 <h2>Recorde!</h2>
-                <p>Sua pontuação: <span>${score}</span></p>
+                <p>Sua pontuação: <span id="final-score">${score}</span></p>
                 <form id="register-form">
                     <input type="text" id="player-name" placeholder="Seu nome" required maxlength="20">
                     <input type="email" id="player-email" placeholder="Seu e-mail (opcional)">
