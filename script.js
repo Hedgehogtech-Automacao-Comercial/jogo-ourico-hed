@@ -396,14 +396,14 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>`;
 
         formContainer.style.display = "flex";
-        formContainer
-            .querySelector("#register-form")
-            .addEventListener("submit", handleFormSubmit);
+        formContainer.querySelector("#register-form").addEventListener("submit", handleFormSubmit);
 
         setTimeout(() => {
             document.getElementById("player-name").focus();
         }, 100);
     });
+    
+    // O listener do restartButton é adicionado dinamicamente quando o leaderboard é mostrado.
 
     gameContainer.focus();
 });
