@@ -13,9 +13,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const consentCheckbox = document.getElementById('lgpd-consent');
     const consentContinueButton = document.getElementById('consent-continue-button');
     const formContainer = document.getElementById('form-container');
-    const leaderboardContainer = document.getElementById('leaderboard-container');
-    const leaderboardList = document.getElementById('leaderboard-list');
-    const restartButton = document.getElementById('restart-button');
+    // As referências para leaderboardList e restartButton são feitas depois que são criados dinamicamente
+
     const sounds = {
         music: document.getElementById('music-bg'),
         jump: document.getElementById('sound-jump'),
@@ -85,7 +84,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch('/api/submit-score', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                // CORREÇÃO: Adicionado o campo 'consent: true' ao pacote de dados
                 body: JSON.stringify({ name, email, score, consent: true })
             });
             if (!response.ok) {
@@ -107,7 +105,6 @@ document.addEventListener('DOMContentLoaded', () => {
     async function showLeaderboard() {
         formContainer.style.display = 'none';
         leaderboardContainer.style.display = 'flex';
-        // Garante que o conteúdo do modal e o listener do botão de restart sejam recriados
         leaderboardContainer.innerHTML = `
             <div class="modal">
                 <h2>Ranking de Construtores</h2>
@@ -140,17 +137,157 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // --- Loop Principal e Lógicas de Gameplay ---
-    function gameLoop(){if(!isGameRunning)return;gameSpeed+=.003;frameCounter++;!isJumping&&!isAttacking&&frameCounter%10===0&&(hedgehog.classList.contains("run-frame-1")?(hedgehog.classList.remove("run-frame-1"),hedgehog.classList.add("run-frame-2")):(hedgehog.classList.remove("run-frame-2"),hedgehog.classList.add("run-frame-1")));handleJump();handleItems();spawnTimer++;if(spawnTimer>=spawnInterval){spawnItem();spawnTimer=0;spawnInterval>40&&(spawnInterval*=.99)}}
-    function spawnItem(){const e=document.createElement("div");e.className="item";const t=Math.random();t<.5?e.classList.add("tool"):t<.8?e.classList.add("code"):e.classList.add("bug"),e.style.left=gameContainer.offsetWidth+"px",gameContainer.appendChild(e)}
-    function handleJump(){if(isJumping){isJumpKeyDown&&jumpTimeCounter<maxJumpTime?(verticalVelocity+=.35,jumpTimeCounter++):void 0;hedgehogBottom+=verticalVelocity;verticalVelocity-=gravity;if(hedgehogBottom<=24){hedgehogBottom=24;isJumping=false;hedgehog.classList.remove("jump-frame");hedgehog.classList.add("run-frame-1")}hedgehog.style.bottom=hedgehogBottom+"px"}}
-    function createExplosion(e,t){const o=document.createElement("div");o.className="explosion",o.style.left=`${e-32}px`,o.style.top=`${t-32}px`,gameContainer.appendChild(o),setTimeout(()=>{o.remove()},500)}
-    function handleItems(){document.querySelectorAll(".item").forEach(e=>{let t=e.offsetLeft;t-=gameSpeed,e.style.left=t+"px";if(t<-50)return void e.remove();const o=hedgehog.getBoundingClientRect(),n=e.getBoundingClientRect();o.left<n.right&&o.right>n.left&&o.top<n.bottom&&o.bottom>n.top&&(e.classList.contains("bug")?isAttacking?(createExplosion(n.left,n.top),playSound("explosion"),updateScore(20),e.remove()):endGame("Ops, um bug!"):(updateScore(10),updateBoost(10),playSound("collect"),e.remove()))})}
-    function updateScore(e){score+=e,scoreValue.textContent=score}
-    function updateBoost(e){if(isBoostReady)return;boostValue=Math.min(boostValue+e,boostMax);const t=(boostValue/boostMax)*100;boostBar.style.backgroundSize=`${t}% 100%`;if(boostValue>=boostMax){isBoostReady=true,boostBarContainer&&boostBarContainer.classList.add("ready"),attackButton&&attackButton.classList.add("ready"),playSound("powerup")}}
-    function triggerAttack(){if(!isBoostReady||isAttacking)return;isAttacking=true,isBoostReady=false,boostValue=0,boostBar.style.backgroundSize="0% 100%",boostBarContainer&&boostBarContainer.classList.remove("ready"),attackButton&&attackButton.classList.remove("ready"),hedgehog.classList.remove("run-frame-1","run-frame-2","jump-frame"),hedgehog.classList.add("attack-pose"),playSound("explosion"),setTimeout(()=>{isAttacking=false,hedgehog.classList.remove("attack-pose");hedgehog.classList.add("run-frame-1")},500)}
-    function handleJumpPress(){if(!gameControlsActive)return;if(!isGameRunning)startGame();else if(!isJumping){isJumping=true,isJumpKeyDown=true,jumpTimeCounter=0,verticalVelocity=initialJumpStrength,hedgehog.classList.add("jump-frame"),hedgehog.classList.remove("run-frame-1","run-frame-2","attack-pose"),playSound("jump")}}
-    function handleJumpRelease(){isJumpKeyDown=false}
+    // --- Loop Principal do Jogo ---
+    function gameLoop() {
+        if (!isGameRunning) return;
+        gameSpeed += 0.003;
+        frameCounter++;
+        if (!isJumping && !isAttacking && frameCounter % 10 === 0) {
+            if (hedgehog.classList.contains('run-frame-1')) {
+                hedgehog.classList.remove('run-frame-1');
+                hedgehog.classList.add('run-frame-2');
+            } else {
+                hedgehog.classList.remove('run-frame-2');
+                hedgehog.classList.add('run-frame-1');
+            }
+        }
+        handleJump();
+        handleItems();
+        
+        spawnTimer++;
+        if (spawnTimer >= spawnInterval) {
+            spawnItem();
+            spawnTimer = 0;
+            if (spawnInterval > 40) {
+                spawnInterval *= 0.99;
+            }
+        }
+    }
+
+    function spawnItem() {
+        const itemDiv = document.createElement("div");
+        itemDiv.className = 'item';
+        const random = Math.random();
+        if (random < 0.5) itemDiv.classList.add("tool");
+        else if (random < 0.8) itemDiv.classList.add("code");
+        else itemDiv.classList.add("bug");
+        itemDiv.style.left = gameContainer.offsetWidth + "px";
+        gameContainer.appendChild(itemDiv);
+    }
+    
+    // --- Lógicas de Gameplay ---
+    function handleJump() {
+        if (isJumping) {
+            if (isJumpKeyDown && jumpTimeCounter < maxJumpTime) {
+                verticalVelocity += 0.35;
+                jumpTimeCounter++;
+            }
+            hedgehogBottom += verticalVelocity;
+            verticalVelocity -= gravity;
+            if (hedgehogBottom <= 24) {
+                hedgehogBottom = 24;
+                isJumping = false;
+                hedgehog.classList.remove('jump-frame');
+                hedgehog.classList.add('run-frame-1');
+            }
+            hedgehog.style.bottom = hedgehogBottom + 'px';
+        }
+    }
+
+    function createExplosion(x, y) {
+        const explosion = document.createElement('div');
+        explosion.className = 'explosion';
+        explosion.style.left = `${x - 32}px`;
+        explosion.style.top = `${y - 32}px`;
+        gameContainer.appendChild(explosion);
+        setTimeout(() => explosion.remove(), 500);
+    }
+
+    function handleItems() {
+        document.querySelectorAll(".item").forEach(item => {
+            let itemLeft = item.offsetLeft;
+            itemLeft -= gameSpeed;
+            item.style.left = itemLeft + "px";
+            if (itemLeft < -50) {
+                item.remove();
+                return;
+            }
+            const hedgehogRect = hedgehog.getBoundingClientRect();
+            const itemRect = item.getBoundingClientRect();
+            if (hedgehogRect.left < itemRect.right && hedgehogRect.right > itemRect.left && hedgehogRect.top < itemRect.bottom && hedgehogRect.bottom > itemRect.top) {
+                if (item.classList.contains('bug')) {
+                    if (isAttacking) {
+                        createExplosion(itemRect.left, itemRect.top);
+                        playSound('explosion');
+                        updateScore(20);
+                        item.remove();
+                    } else {
+                        endGame("Ops, um bug!");
+                    }
+                } else {
+                    updateScore(10);
+                    updateBoost(10);
+                    playSound('collect');
+                    item.remove();
+                }
+            }
+        });
+    }
+
+    function updateScore(points) {
+        score += points;
+        scoreValue.textContent = score;
+    }
+
+    function updateBoost(value) {
+        if (isBoostReady) return;
+        boostValue = Math.min(boostValue + value, boostMax);
+        const boostPercentage = (boostValue / boostMax) * 100;
+        boostBar.style.backgroundSize = `${boostPercentage}% 100%`;
+        if (boostValue >= boostMax) {
+            isBoostReady = true;
+            if (boostBarContainer) boostBarContainer.classList.add('ready');
+            if (attackButton) attackButton.classList.add('ready');
+            playSound('powerup');
+        }
+    }
+    
+    function triggerAttack() {
+        if (!isBoostReady || isAttacking) return;
+        isAttacking = true;
+        isBoostReady = false;
+        boostValue = 0;
+        boostBar.style.backgroundSize = '0% 100%';
+        if (boostBarContainer) boostBarContainer.classList.remove('ready');
+        if (attackButton) attackButton.classList.remove('ready');
+        
+        hedgehog.classList.remove('run-frame-1', 'run-frame-2', 'jump-frame');
+        hedgehog.classList.add('attack-pose');
+        playSound('explosion');
+
+        setTimeout(() => {
+            isAttacking = false;
+            hedgehog.classList.remove('attack-pose');
+            hedgehog.classList.add('run-frame-1');
+        }, 500);
+    }
+
+    function handleJumpPress() {
+        if (!gameControlsActive) return;
+        if (!isGameRunning) {
+            startGame();
+        } else if (!isJumping) {
+            isJumping = true;
+            isJumpKeyDown = true;
+            jumpTimeCounter = 0;
+            verticalVelocity = initialJumpStrength;
+            hedgehog.classList.add('jump-frame');
+            hedgehog.classList.remove('run-frame-1', 'run-frame-2', 'attack-pose');
+            playSound('jump');
+        }
+    }
+
+    function handleJumpRelease() { isJumpKeyDown = false; }
     
     // --- Controle do Jogo (Início, Fim, Comandos) ---
     function handleKeyDown(e) {
@@ -245,7 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
         formContainer.innerHTML = `
             <div class="modal">
                 <h2>Recorde!</h2>
-                <p>Sua pontuação: <span id="final-score">${score}</span></p>
+                <p>Sua pontuação: <span>${score}</span></p>
                 <form id="register-form">
                     <input type="text" id="player-name" placeholder="Seu nome" required maxlength="20">
                     <input type="email" id="player-email" placeholder="Seu e-mail (opcional)">
@@ -260,11 +397,8 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('player-name').focus();
         }, 100);
     });
-
-    restartButton.addEventListener('click', () => {
-        leaderboardContainer.style.display = 'none';
-        startGame();
-    });
+    
+    // O listener do restartButton é adicionado dinamicamente quando o leaderboard é mostrado.
 
     gameContainer.focus();
 });
