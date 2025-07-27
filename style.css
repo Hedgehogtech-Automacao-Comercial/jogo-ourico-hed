@@ -295,6 +295,38 @@ body {
     to { opacity: 1; }
 }
 
+/* --- ESTILOS PARA CONSENTIMENTO LGPD --- */
+.modal .small-text {
+    font-size: 0.8em;
+    color: #666;
+    margin-bottom: 15px;
+}
+
+.consent-checkbox {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 20px 0;
+    font-family: Arial, sans-serif;
+}
+
+.consent-checkbox input[type="checkbox"] {
+    margin-right: 10px;
+    width: 18px;
+    height: 18px;
+}
+
+.consent-checkbox label {
+    font-size: 0.9em;
+    text-align: left;
+}
+
+.modal button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+
 /* Animações genéricas */
 @keyframes blink {
     50% { opacity: 0.2; }
