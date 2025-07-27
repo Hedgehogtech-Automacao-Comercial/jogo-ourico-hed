@@ -44,59 +44,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const maxJumpTime = 15;
     let gameControlsActive = true;
 
-    // --- Funções de Controle do Jogo (Início e Fim) ---
-    // CORREÇÃO: A função endGame foi movida para o início para ser encontrada por outras funções.
-    function endGame(message) {
-        gameControlsActive = false;
-        isGameRunning = false;
-        clearInterval(gameLoopInterval);
-        hedgehog.classList.add("crashed");
-        saveHighScore();
-        sounds.music.pause();
-        playSound("gameover");
-
-        consentContainer.style.display = "flex";
-        messageDisplay.style.display = "none";
-    }
-
-    function startGame() {
-        gameControlsActive = true;
-        isGameRunning = true;
-        score = 0;
-        gameSpeed = 5;
-        boostValue = 0;
-        isBoostReady = false;
-        isAttacking = false;
-        spawnTimer = 0;
-        spawnInterval = 100;
-        hedgehog.classList.remove("crashed", "attack-pose", "jump-frame");
-        hedgehog.classList.add("run-frame-1");
-        document.querySelectorAll(".item").forEach((item) => item.remove());
-        messageDisplay.style.display = "block";
-        messageDisplay.innerHTML = `HED PDV <span>Pressione ESPAÇO para construir</span>`;
-        consentContainer.style.display = "none";
-        formContainer.style.display = "none";
-        leaderboardContainer.style.display = "none";
-        updateScore(0);
-        updateBoost(0);
-        if (boostBarContainer) boostBarContainer.classList.remove("ready");
-        if (attackButton) attackButton.classList.remove("ready");
-        if (!isMuted) {
-            sounds.music.currentTime = 0;
-            sounds.music.play();
-        } else {
-            sounds.music.pause();
-        }
-        gameLoopInterval = setInterval(gameLoop, 20);
-    }
-
-    // --- Funções de Áudio e Pontuação ---
+    // --- Funções de Áudio ---
     function playSound(sound) {
         if (!isMuted && sounds[sound]) {
             sounds[sound].currentTime = 0;
             sounds[sound].play().catch(e => console.error("Erro ao tocar som:", e));
         }
     }
+
+    // --- Funções de Pontuação ---
     function loadHighScore() {
         highScore = localStorage.getItem("hedgehogHighScoreV2") || 0;
         highscoreValue.textContent = highScore;
@@ -170,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // --- Funções Auxiliares de Gameplay ---
+    // --- Funções Auxiliares de Gameplay (Definidas ANTES do gameLoop) ---
     function spawnItem() {
         const itemDiv = document.createElement("div");
         itemDiv.className = "item";
@@ -345,6 +301,50 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
+    function startGame() {
+        gameControlsActive = true;
+        isGameRunning = true;
+        score = 0;
+        gameSpeed = 5;
+        boostValue = 0;
+        isBoostReady = false;
+        isAttacking = false;
+        spawnTimer = 0;
+        spawnInterval = 100;
+        hedgehog.classList.remove("crashed", "attack-pose", "jump-frame");
+        hedgehog.classList.add("run-frame-1");
+        document.querySelectorAll(".item").forEach((item) => item.remove());
+        messageDisplay.style.display = "block";
+        messageDisplay.innerHTML = `HED PDV <span>Pressione ESPAÇO para construir</span>`;
+        consentContainer.style.display = "none";
+        formContainer.style.display = "none";
+        leaderboardContainer.style.display = "none";
+        updateScore(0);
+        updateBoost(0);
+        if (boostBarContainer) boostBarContainer.classList.remove("ready");
+        if (attackButton) attackButton.classList.remove("ready");
+        if (!isMuted) {
+            sounds.music.currentTime = 0;
+            sounds.music.play();
+        } else {
+            sounds.music.pause();
+        }
+        gameLoopInterval = setInterval(gameLoop, 20);
+    }
+
+    function endGame(message) {
+        gameControlsActive = false;
+        isGameRunning = false;
+        clearInterval(gameLoopInterval);
+        hedgehog.classList.add("crashed");
+        saveHighScore();
+        sounds.music.pause();
+        playSound("gameover");
+
+        consentContainer.style.display = "flex";
+        messageDisplay.style.display = "none";
+    }
+
     function handleFormSubmit(e) {
         e.preventDefault();
         const playerName = formContainer.querySelector("#player-name").value;
@@ -390,7 +390,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <p>Sua pontuação: <span>${score}</span></p>
                 <form id="register-form">
                     <input type="text" id="player-name" placeholder="Seu nome" required maxlength="20">
-                    <input type="email" id="player-email" placeholder="Seu e-mail (opcional)">
+                    <input type="email" id="player-email" placeholder="Seu e-mail" required>
                     <button type="submit">Enviar Pontuação</button>
                 </form>
             </div>`;
@@ -402,6 +402,8 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById("player-name").focus();
         }, 100);
     });
+
+    // O listener do restartButton é adicionado dinamicamente quando o leaderboard é mostrado.
 
     gameContainer.focus();
 });
