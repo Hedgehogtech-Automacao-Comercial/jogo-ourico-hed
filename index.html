@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>HED PDV - A Construção Infinita</title>
+    
+    <meta name="theme-color" content="#87ceeb"/>
+    <link rel="manifest" href="manifest.json">
+
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -12,7 +16,6 @@
         <div id="sky"></div>
         <div id="far-clouds"></div>
         <div id="near-clouds"></div>
-
         <div id="ui-container">
             <div id="score-display">PONTOS: <span id="score-value">0</span></div>
             <div id="highscore-display">RECORD: <span id="highscore-value">0</span></div>
@@ -21,12 +24,10 @@
                 <div id="boost-bar"></div>
             </div>
         </div>
-        
         <div id="message-display">
             HED PDV
             <span>Pressione ESPAÇO para construir</span>
         </div>
-
         <div id="form-container" class="overlay" style="display: none;">
             <div class="modal">
                 <h2>Recorde!</h2>
@@ -38,30 +39,38 @@
                 </form>
             </div>
         </div>
-
         <div id="leaderboard-container" class="overlay" style="display: none;">
             <div class="modal">
                 <h2>Ranking de Construtores</h2>
-                <ol id="leaderboard-list">
-                    </ol>
+                <ol id="leaderboard-list"></ol>
                 <button id="restart-button">Jogar Novamente</button>
             </div>
         </div>
-
         <div id="hedgehog"></div>
         <div id="ground"></div>
         <div id="attack-button">S</div>
     </div>
-    
     <button id="mute-button">🔊</button>
-    
     <audio id="music-bg" src="sons/music.mp3" loop></audio>
     <audio id="sound-jump" src="sons/jump.wav"></audio>
     <audio id="sound-collect" src="sons/collect.wav"></audio>
     <audio id="sound-gameover" src="sons/gameover.wav"></audio>
     <audio id="sound-explosion" src="sons/explosion.wav"></audio>
     <audio id="sound-powerup" src="sons/powerUp.wav"></audio>
-    
     <script src="script.js" defer></script>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => {
+                        console.log('Service Worker registrado com sucesso:', registration);
+                    })
+                    .catch(error => {
+                        console.log('Falha ao registrar Service Worker:', error);
+                    });
+            });
+        }
+    </script>
 </body>
 </html>
