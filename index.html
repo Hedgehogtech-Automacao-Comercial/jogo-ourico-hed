@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>HED PDV - A Construção Infinita</title>
-    
     <meta name="theme-color" content="#87ceeb"/>
     <link rel="manifest" href="manifest.json">
-
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -28,24 +26,25 @@
             HED PDV
             <span>Pressione ESPAÇO para construir</span>
         </div>
+
+        <div id="consent-container" class="overlay" style="display: none;">
+            <div class="modal">
+                <h2>Termos e Privacidade</h2>
+                <p class="small-text">Para salvar sua pontuação no ranking online, precisamos do seu consentimento.</p>
+                <div class="consent-checkbox">
+                    <input type="checkbox" id="lgpd-consent">
+                    <label for="lgpd-consent">Eu li e concordo com a <a href="./privacy.html" target="_blank">Política de Privacidade</a>.</label>
+                </div>
+                <button id="consent-continue-button" disabled>Continuar</button>
+            </div>
+        </div>
+
         <div id="form-container" class="overlay" style="display: none;">
-            <div class="modal">
-                <h2>Recorde!</h2>
-                <p>Sua pontuação: <span id="final-score">0</span></p>
-                <form id="register-form">
-                    <input type="text" id="player-name" placeholder="Seu nome" required maxlength="20">
-                    <input type="email" id="player-email" placeholder="Seu e-mail (opcional)">
-                    <button type="submit">Enviar Pontuação</button>
-                </form>
             </div>
-        </div>
+
         <div id="leaderboard-container" class="overlay" style="display: none;">
-            <div class="modal">
-                <h2>Ranking de Construtores</h2>
-                <ol id="leaderboard-list"></ol>
-                <button id="restart-button">Jogar Novamente</button>
             </div>
-        </div>
+        
         <div id="hedgehog"></div>
         <div id="ground"></div>
         <div id="attack-button">S</div>
@@ -58,17 +57,10 @@
     <audio id="sound-explosion" src="sons/explosion.wav"></audio>
     <audio id="sound-powerup" src="sons/powerUp.wav"></audio>
     <script src="script.js" defer></script>
-
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(registration => {
-                        console.log('Service Worker registrado com sucesso:', registration);
-                    })
-                    .catch(error => {
-                        console.log('Falha ao registrar Service Worker:', error);
-                    });
+                navigator.serviceWorker.register('./sw.js').then(reg => console.log('SW Registrado')).catch(err => console.log('SW Falhou', err));
             });
         }
     </script>
